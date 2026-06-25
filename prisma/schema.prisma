@@ -1,0 +1,149 @@
+// Abhinandan Tea & Snacks Centre — Database Schema
+// Datasource: Supabase PostgreSQL
+// Connect via: SUPABASE_DATABASE_URL in .env.local
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  owner
+  section_manager
+  snacks_staff
+  tea_staff
+}
+
+enum Section {
+  tea
+  snacks
+}
+
+enum OrderSource {
+  counter
+  customer
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  cancelled
+}
+
+enum TokenStatus {
+  awaiting_payment
+  pending
+  preparing
+  ready
+  served
+}
+
+enum PaymentStatus {
+  pending
+  captured
+  failed
+  refunded
+}
+
+enum Shift {
+  morning
+  evening
+}
+
+model User {
+  id           String         @id @default(cuid())
+  role         Role
+  name         String
+  phone        String?        @unique
+  supabaseId   String?        @unique
+  section      Section?       // only for section_manager role
+  createdAt    DateTime       @default(now())
+  teaEntries   TeaQuickEntry[]
+}
+
+model MenuItem {
+  id          String      @id @default(cuid())
+  section     Section
+  name        String
+  price       Float
+  category    String
+  available   Boolean     @default(true)
+  imageUrl    String?
+  orderItems  OrderItem[]
+  teaEntries  TeaQuickEntry[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  source        OrderSource
+  status        OrderStatus @default(pending)
+  total         Float
+  paymentMethod String?
+  mobile        String?
+  tokenNumber   Int?
+  sessionId     String?
+  createdAt     DateTime    @default(now())
+  items         OrderItem[]
+  token         Token?
+  payment       Payment?
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  menuItemId String
+  qty        Int
+  price      Float
+  order      Order    @relation(fields: [orderId], references: [id])
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model Token {
+  id          String      @id @default(cuid())
+  orderId     String      @unique
+  tokenNumber Int
+  date        String      // YYYY-MM-DD — resets daily
+  status      TokenStatus @default(pending)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  order       Order       @relation(fields: [orderId], references: [id])
+
+  @@unique([date, tokenNumber])
+}
+
+model Payment {
+  id                 String        @id @default(cuid())
+  orderId            String        @unique
+  razorpayOrderId    String?
+  razorpayPaymentId  String?
+  status             PaymentStatus @default(pending)
+  amount             Float
+  createdAt          DateTime      @default(now())
+  order              Order         @relation(fields: [orderId], references: [id])
+}
+
+enum TeaSource {
+  manual
+  sms_auto
+}
+
+model TeaQuickEntry {
+  id        String    @id @default(cuid())
+  staffId   String?   // null for SMS_AUTO entries
+  itemId    String?   // null for SMS_AUTO entries
+  cups      Int       @default(1)
+  amount    Float?
+  shift     Shift
+  date      String    // YYYY-MM-DD
+  source    TeaSource @default(manual)
+  note      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  staff     User?     @relation(fields: [staffId], references: [id])
+  menuItem  MenuItem? @relation(fields: [itemId], references: [id])
+}

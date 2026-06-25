@@ -2,26 +2,131 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── V1 Brand Palette ──────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --radius: 0.625rem;
+
+  --maroon-deep:   #2D0A0A;
+  --maroon:        #4A1414;
+  --brown:         #7B2D2D;
+  --amber-brand:   #E8920A;
+  --amber-deep:    #C4821A;
+  --gold-pale:     #F5D79E;
+  --gold-bg:       #FDF3E0;
+  --ink:           #1C0F0F;
+  --muted-warm:    #9C7A6A;
+  --border-warm:   #E8D5C4;
+  --hover-warm:    #F7EDE5;
+  --success-brand: #1A6B3A;
+  --pending-brand: #B86D0A;
+
+  /* Semantic aliases */
+  --background:    #FAFAFA;
+  --foreground:    #1C0F0F;
+  --card:          #FFFFFF;
+  --border:        #E8D5C4;
+  --muted:         #F7EDE5;
+  --muted-foreground: #9C7A6A;
+  --ring:          #E8920A;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
+/* ── Heritage diagonal texture ─────────────────────────────── */
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .heritage-texture {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(245, 215, 158, 0.06) 0,
+      rgba(245, 215, 158, 0.06) 1px,
+      transparent 1px,
+      transparent 8px
+    );
   }
+
+  .card-warm {
+    background: #FFFFFF;
+    border: 1px solid var(--border-warm);
+    border-radius: 0.875rem;
+    box-shadow: 0 4px 20px rgba(45, 10, 10, 0.08);
+    transition: all 0.2s ease;
+  }
+
+  .card-warm-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(45, 10, 10, 0.12);
+    background: var(--hover-warm);
+  }
+
+  .divider-dashed {
+    border-top: 1px dashed var(--border-warm);
+  }
+
+  .font-deva {
+    font-family: "Noto Serif Devanagari", serif;
+  }
+
+  .font-display {
+    font-family: "Playfair Display", serif;
+  }
+}
+
+/* ── Amber CTA button ──────────────────────────────────────── */
+@layer components {
+  .btn-amber {
+    background: linear-gradient(135deg, #E8920A 0%, #C4821A 100%);
+    color: var(--maroon-deep);
+    font-weight: 700;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 14px rgba(232, 146, 10, 0.3);
+    transition: all 0.2s ease;
+  }
+  .btn-amber:hover {
+    box-shadow: 0 6px 20px rgba(232, 146, 10, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-amber:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+/* ── Base reset ────────────────────────────────────────────── */
+@layer base {
+  * {
+    border-color: var(--border-warm);
+    box-sizing: border-box;
+  }
+  html, body {
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Use font-display class to opt individual headings into Playfair */
+}
+
+/* ── Scrollbar utilities ───────────────────────────────────── */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sleek 3px scrollbar for vertical containers */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-warm) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border-warm);
+  border-radius: 3px;
 }
