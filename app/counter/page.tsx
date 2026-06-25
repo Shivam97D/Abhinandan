@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { Trash2, Check, UtensilsCrossed, Clock, QrCode, Loader2, History, Minus, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 // mock-data removed — menu loaded from DB
@@ -357,7 +358,7 @@ export default function CounterPage() {
                 >
                   <div className="relative aspect-square bg-[var(--gold-pale)]">
                     {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover"
+                      <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="120px"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
