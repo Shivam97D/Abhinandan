@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     let teaRevenue = 0;
     let snacksRevenue = 0;
-    const itemMap: Record<string, { id: string; name: string; qty: number; revenue: number }> = {};
+    const itemMap: Record<string, { id: string; name: string; section: string; qty: number; revenue: number }> = {};
     const paymentSplitRaw: Record<string, number> = {};
 
     for (const o of orders) {
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
         else snacksRevenue += rev;
 
         const key = it.menuItemId;
-        if (!itemMap[key]) itemMap[key] = { id: key, name: it.menuItem?.name ?? "Item", qty: 0, revenue: 0 };
+        if (!itemMap[key]) itemMap[key] = { id: key, name: it.menuItem?.name ?? "Item", section: it.menuItem?.section ?? "snacks", qty: 0, revenue: 0 };
         itemMap[key].qty += it.qty;
         itemMap[key].revenue += rev;
       }
@@ -239,6 +239,8 @@ export async function GET(req: NextRequest) {
       yesterdayRevenue: yesterdayRevenue !== null ? fmt(yesterdayRevenue) : null,
       revenueVsYesterday,
       period,
+    }, {
+      headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" },
     });
   } catch (e) {
     console.error("[GET /api/analytics]", e);

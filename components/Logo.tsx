@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import Link from "next/link";
 
 export function TeaCupIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
@@ -26,24 +27,22 @@ type LogoProps = {
   variant?: "light" | "dark";
   size?: number;
   withCup?: boolean;
+  href?: string;
 };
 
-export function Logo({ variant = "dark", size = 32, withCup = true }: LogoProps) {
+export function Logo({ variant = "dark", size = 32, withCup = true, href }: LogoProps) {
   const color = variant === "light" ? "text-[var(--gold-pale)]" : "text-[var(--maroon-deep)]";
-  return (
+  const inner = (
     <div className={`flex items-center gap-2 ${color}`}>
-      {withCup && (
-        <TeaCupIcon style={{ width: size, height: size }} />
-      )}
+      {withCup && <TeaCupIcon style={{ width: size, height: size }} />}
       <span
         className="font-bold leading-none"
-        style={{
-          fontFamily: "var(--font-deva, 'Noto Serif Devanagari', serif)",
-          fontSize: size * 0.85,
-        }}
+        style={{ fontFamily: "var(--font-deva, 'Noto Serif Devanagari', serif)", fontSize: size * 0.85 }}
       >
         अभिनंदन
       </span>
     </div>
   );
+  if (href) return <Link href={href} className="flex items-center">{inner}</Link>;
+  return inner;
 }

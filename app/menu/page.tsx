@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, Search, Pencil, Trash2, Loader2, X, ImageIcon, UtensilsCrossed } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, X, ImageIcon } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
 
@@ -19,7 +19,6 @@ type MenuItem = {
 
 const SNACK_CATS = ["Fried", "Rolls", "Sandwiches", "Sweets", "Specials"];
 const TEA_CATS   = ["Tea", "Coffee", "Lassi", "Juice", "Shakes", "Drinks"];
-const ALL_CATS   = [...SNACK_CATS, ...TEA_CATS];
 
 const SECTION_EMOJI: Record<Section, string> = { snacks: "🍟", tea: "☕" };
 

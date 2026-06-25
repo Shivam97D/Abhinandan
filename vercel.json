@@ -1,0 +1,19 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npx prisma generate && npm run build",
+  "installCommand": "npm install",
+  "headers": [
+    {
+      "source": "/api/menu",
+      "headers": [{ "key": "Cache-Control", "value": "public, s-maxage=60, stale-while-revalidate=120" }]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}

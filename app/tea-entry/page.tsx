@@ -30,17 +30,45 @@ export default function TeaEntryPage() {
   const loadHistory = () =>
     fetch("/api/tea-entry").then(r => r.json()).then(d => setTeaHistory(d.history || [])).catch(() => {});
 
+  // Restore draft from localStorage on mount, then merge with loaded items
   useEffect(() => {
     setLoading(true);
     Promise.all([
       fetch("/api/menu").then(r => r.json()).then(d => {
         const items: TeaItem[] = (d.items || []).filter((m: TeaItem) => m.section === "tea");
         setTeaItems(items);
+        // Try restoring saved draft
+        try {
+          const saved = localStorage.getItem("abh_tea_draft");
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed.date === new Date().toISOString().split("T")[0]) {
+              setShift(parsed.shift || "evening");
+              // Only restore keys that exist in the loaded items
+              const validIds = new Set(items.map(i => i.id));
+              const restored: Record<string, number> = {};
+              Object.entries(parsed.qty || {}).forEach(([k, v]) => {
+                if (validIds.has(k)) restored[k] = v as number;
+              });
+              setQty(restored);
+              return;
+            }
+          }
+        } catch {}
         setQty(Object.fromEntries(items.map((t: TeaItem) => [t.id, 0])));
       }),
       loadHistory(),
     ]).finally(() => setLoading(false));
   }, []);
+
+  // Persist draft to localStorage on every qty/shift change
+  useEffect(() => {
+    if (!loading && teaItems.length > 0) {
+      localStorage.setItem("abh_tea_draft", JSON.stringify({
+        qty, shift, date: new Date().toISOString().split("T")[0],
+      }));
+    }
+  }, [qty, shift, loading, teaItems.length]);
 
   const bump = (id: string, d: number) =>
     setQty((q) => ({ ...q, [id]: Math.max(0, (q[id] || 0) + d) }));
@@ -69,6 +97,8 @@ export default function TeaEntryPage() {
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+      localStorage.removeItem("abh_tea_draft");
+      setQty(Object.fromEntries(teaItems.map((t) => [t.id, 0])));
       await loadHistory();
     } catch {}
     setSaving(false);

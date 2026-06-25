@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   IndianRupee, ShoppingBag, Clock, Ticket, Bell, ArrowUp, ArrowDown,
-  Lightbulb, TrendingUp, Share2, AlertTriangle, Coffee, UtensilsCrossed,
+  Lightbulb, TrendingUp, Share2, AlertTriangle, Coffee, UtensilsCrossed, X, Loader2,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -66,7 +66,9 @@ export default function Dashboard() {
   const [period, setPeriod] = useState<Period>("Today");
   const [data, setData] = useState<AnalyticsData>(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [showBell, setShowBell] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -77,16 +79,21 @@ export default function Dashboard() {
     fetch("/api/users/me").then(r => r.json()).then(d => { if (d.user) setUser(d.user); }).catch(() => {});
   }, []);
 
-  const loadData = useCallback((p: Period) => {
-    setLoading(true);
+  const loadData = useCallback((p: Period, isInitial = false) => {
+    if (isInitial) setLoading(true); else setRefreshing(true);
     fetch(`/api/analytics?period=${p}`)
       .then(r => r.json())
       .then(d => setData(d as AnalyticsData))
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => { setLoading(false); setRefreshing(false); });
   }, []);
 
-  useEffect(() => { loadData(period); }, [period, loadData]);
+  useEffect(() => { loadData(period, true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePeriod = (p: Period) => {
+    setPeriod(p);
+    loadData(p, false);
+  };
 
   const pieData = [
     { name: "Tea",    value: data.teaRevenue,    color: MAROON },
@@ -100,9 +107,9 @@ export default function Dashboard() {
   const maxOrders = data.hourlyData.length ? Math.max(...data.hourlyData.map(d => d.orders)) : 0;
 
   const chartDataKey = period === "Today" ? "orders" : null;
-  const xKey = period === "month"
+  const xKey = period === "Month"
     ? "week"
-    : period === "week"
+    : period === "Week"
     ? "day"
     : "hour";
 
@@ -138,7 +145,7 @@ export default function Dashboard() {
 
         {/* Header */}
         <header className="sticky top-0 z-10 bg-[var(--gold-bg)] border-b border-[var(--border-warm)] px-4 lg:px-8 py-4 flex items-center justify-between">
-          <div className="lg:hidden"><Logo size={24} /></div>
+          <div className="lg:hidden"><Logo size={24} href="/dashboard" /></div>
           <div className="hidden lg:block">
             <h1 className="text-xl lg:text-2xl font-display text-[var(--maroon-deep)]">
               Good {now.getHours() < 12 ? "morning" : now.getHours() < 17 ? "afternoon" : "evening"}, {user?.name ?? "Staff"}
@@ -147,19 +154,61 @@ export default function Dashboard() {
               {now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <span className="hidden md:block text-sm font-mono text-[var(--brown)]">{now.toLocaleTimeString("en-IN")}</span>
+            {refreshing && <Loader2 size={16} className="text-[var(--amber-brand)] animate-spin" />}
+
+            {/* Bell dropdown */}
             <div className="relative">
-              <Bell size={20} className="text-[var(--brown)]" />
-              {bellCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--amber-brand)] text-white text-[10px] grid place-items-center font-bold">
-                  {bellCount}
-                </span>
+              <button onClick={() => setShowBell(!showBell)}
+                className="relative p-1.5 rounded-lg hover:bg-[var(--hover-warm)] transition-colors">
+                <Bell size={20} className="text-[var(--brown)]" />
+                {bellCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[var(--amber-brand)] text-white text-[10px] grid place-items-center font-bold">
+                    {bellCount}
+                  </span>
+                )}
+              </button>
+              {showBell && (
+                <div className="absolute right-0 top-10 w-80 bg-white rounded-xl shadow-2xl border border-[var(--border-warm)] z-50">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-warm)]">
+                    <h3 className="font-bold text-sm text-[var(--maroon-deep)]">Notifications</h3>
+                    <button onClick={() => setShowBell(false)} className="text-[var(--muted-warm)] hover:text-[var(--brown)]"><X size={16} /></button>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto scrollbar-thin">
+                    {data.pendingTokenCount > 0 && (
+                      <Link href="/counter" onClick={() => setShowBell(false)}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--hover-warm)] transition-colors border-b border-[var(--border-warm)]">
+                        <span className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 grid place-items-center text-base shrink-0">⏳</span>
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--ink)]">{data.pendingTokenCount} token{data.pendingTokenCount !== 1 ? "s" : ""} waiting</p>
+                          <p className="text-xs text-[var(--muted-warm)]">Tap to open counter queue</p>
+                        </div>
+                      </Link>
+                    )}
+                    {data.liveQueue.slice(0, 6).map((q) => (
+                      <div key={q.id} className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-warm)] last:border-0">
+                        <span className="font-mono text-xs font-bold text-[var(--maroon-deep)] w-9 shrink-0">#{String(q.tokenNumber).padStart(3, "0")}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-[var(--ink)] truncate">{q.items}</p>
+                          <p className="text-[10px] text-[var(--muted-warm)] capitalize">{q.status.replace("_", " ")}</p>
+                        </div>
+                        <span className="text-xs font-bold text-[var(--amber-brand)] shrink-0">₹{q.total}</span>
+                      </div>
+                    ))}
+                    {data.pendingTokenCount === 0 && data.liveQueue.length === 0 && (
+                      <div className="py-10 text-center text-sm text-[var(--muted-warm)]">All caught up! No pending tokens.</div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-            <div className="w-9 h-9 rounded-full bg-[var(--maroon)] text-[var(--gold-pale)] grid place-items-center font-bold text-sm">
+
+            <Link href="/staff"
+              className="w-9 h-9 rounded-full bg-[var(--maroon)] text-[var(--gold-pale)] grid place-items-center font-bold text-sm hover:opacity-80 transition-opacity"
+              title={user?.name ?? "Staff"}>
               {user?.name?.[0]?.toUpperCase() ?? "S"}
-            </div>
+            </Link>
           </div>
         </header>
 
@@ -226,7 +275,7 @@ export default function Dashboard() {
                 <h3 className="text-base font-bold text-[var(--maroon-deep)]">Revenue Overview</h3>
                 <div className="flex gap-1 bg-[var(--gold-bg)] rounded-lg p-1">
                   {(["Today", "Week", "Month"] as Period[]).map((p) => (
-                    <button key={p} onClick={() => setPeriod(p)}
+                    <button key={p} onClick={() => handlePeriod(p)}
                       className={`px-3 py-1 text-xs rounded-md font-semibold transition-colors ${period === p ? "bg-[var(--amber-brand)] text-white" : "text-[var(--muted-warm)]"}`}>{p}</button>
                   ))}
                 </div>
@@ -244,7 +293,7 @@ export default function Dashboard() {
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-warm)" />
                       <XAxis dataKey="hour" stroke="var(--muted-warm)" fontSize={11} interval={2} />
                       <YAxis stroke="var(--muted-warm)" fontSize={12} />
-                      <Tooltip contentStyle={{ background: "white", border: `1px solid ${MAROON}`, borderRadius: 8 }} formatter={(v: unknown) => [v, "Orders"]} />
+                      <Tooltip contentStyle={{ background: "white", border: `1px solid ${MAROON}`, borderRadius: 8 }} formatter={(v) => [v ?? 0, "Orders"]} />
                       <Area type="monotone" dataKey="orders" stroke={MAROON} fill="url(#g1)" strokeWidth={2} name="Orders" />
                     </AreaChart>
                   ) : (

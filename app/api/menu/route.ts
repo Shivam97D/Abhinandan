@@ -6,7 +6,9 @@ export async function GET() {
     const items = await prisma.menuItem.findMany({
       orderBy: [{ section: "asc" }, { category: "asc" }, { name: "asc" }],
     });
-    return NextResponse.json({ items });
+    return NextResponse.json({ items }, {
+      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" },
+    });
   } catch (e) {
     console.error("[GET /api/menu]", e);
     return NextResponse.json({ error: "Failed to fetch menu" }, { status: 500 });

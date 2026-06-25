@@ -128,7 +128,7 @@ export default function ReportsPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border-warm)" />
                         <XAxis dataKey="hour" stroke="var(--muted-warm)" fontSize={11} interval={2} />
                         <YAxis stroke="var(--muted-warm)" fontSize={11} />
-                        <Tooltip formatter={(v: unknown) => [v, "Orders"]} contentStyle={{ border: `1px solid ${MAROON}`, borderRadius: 8 }} />
+                        <Tooltip formatter={(v) => [v ?? 0, "Orders"]} contentStyle={{ border: `1px solid ${MAROON}`, borderRadius: 8 }} />
                         <Area type="monotone" dataKey="orders" stroke={MAROON} fill="url(#rg1)" strokeWidth={2} name="Orders" />
                       </AreaChart>
                     ) : (

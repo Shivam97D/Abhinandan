@@ -22,7 +22,10 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession() decodes the JWT locally (no network call) — fast enough for route protection.
+  // API routes that need fresh auth use getUser() (network-validated) independently.
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user ?? null
   const { pathname } = request.nextUrl
 
   const PROTECTED = ['/dashboard', '/counter', '/tea-entry', '/orders', '/menu', '/reports', '/staff', '/settings', '/section-dashboard', '/tea-monitor']
