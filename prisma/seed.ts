@@ -65,6 +65,21 @@ async function main() {
     },
   })
   console.log('Seeded Owner and Manager profiles.')
+
+  console.log('Seeding default shop settings...')
+  await prisma.shopSettings.upsert({
+    where: { id: 'default' },
+    update: {
+      upiId: 'paytmqr722wbp@ptys',
+      upiMerchantName: 'Paytm',
+    },
+    create: {
+      id: 'default',
+      upiId: 'paytmqr722wbp@ptys',
+      upiMerchantName: 'Paytm',
+    },
+  })
+  console.log('Seeded default shop settings.')
 }
 
 main()

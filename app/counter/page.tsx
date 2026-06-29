@@ -176,8 +176,8 @@ export default function CounterPage() {
     fetch("/api/settings")
       .then(r => r.json())
       .then(d => {
-        if (d.upiId) setUpiId(d.upiId);
-        if (d.upiMerchantName) setUpiName(d.upiMerchantName);
+        if (d.settings?.upiId) setUpiId(d.settings.upiId);
+        if (d.settings?.upiMerchantName) setUpiName(d.settings.upiMerchantName);
       })
       .catch(() => {});
   }, []);
