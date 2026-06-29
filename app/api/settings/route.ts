@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const SETTINGS_ID = "default";
 
 // GET — return singleton settings row (upsert default if missing)

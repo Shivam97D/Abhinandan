@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 const VALID_STATUSES = ["awaiting_payment", "pending", "preparing", "ready", "served"];
 
 export async function GET() {
