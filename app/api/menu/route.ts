@@ -9,9 +9,10 @@ export async function GET() {
     return NextResponse.json({ items }, {
       headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" },
     });
-  } catch (e) {
+  } catch (e: unknown) {
+    const err = e as { message?: string; code?: string };
     console.error("[GET /api/menu]", e);
-    return NextResponse.json({ error: "Failed to fetch menu" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch menu", detail: err?.message, code: err?.code }, { status: 500 });
   }
 }
 

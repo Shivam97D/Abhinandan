@@ -29,14 +29,18 @@ export async function POST(req: NextRequest) {
     const tokenNumber = await getNextTokenNumber(today);
 
     const isCounterPending = paymentMethod === "counter_pending";
-    const tokenStatus = isCounterPending ? "awaiting_payment" : "pending";
+    const isCounterUpi = paymentMethod === "counter_upi_pending";
+    const needsPaymentConfirm = isCounterPending || isCounterUpi;
+    const tokenStatus = needsPaymentConfirm ? "awaiting_payment" : "pending";
+    // Store actual payment method for display
+    const storedPaymentMethod = isCounterUpi ? "upi" : isCounterPending ? null : paymentMethod;
 
     const order = await prisma.order.create({
       data: {
         source: "counter",
         status: "pending",
         total,
-        paymentMethod: isCounterPending ? null : paymentMethod,
+        paymentMethod: storedPaymentMethod,
         mobile: mobile || null,
         tokenNumber,
         items: {
@@ -71,7 +75,7 @@ export async function POST(req: NextRequest) {
           orderId: order.id,
           status: tokenStatus,
           total,
-          paymentMethod: isCounterPending ? null : paymentMethod,
+          paymentMethod: storedPaymentMethod,
           items: order.items.map((it) => ({
             id: it.id,
             name: it.menuItem?.name ?? "Item",

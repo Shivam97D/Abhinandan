@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   IndianRupee, ShoppingBag, Clock, Ticket, Bell, ArrowUp, ArrowDown,
-  Lightbulb, TrendingUp, Share2, AlertTriangle, Coffee, UtensilsCrossed, X, Loader2,
+  Lightbulb, TrendingUp, Share2, AlertTriangle, Coffee, UtensilsCrossed, X, Loader2, Settings, Check,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -12,9 +12,71 @@ import {
 } from "recharts";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
-import { Logo } from "@/components/Logo";
+import { createClient } from "@/utils/supabase/client";
 
 const MAROON  = "#4A1414";
+
+function playSynthSound(type: string) {
+  if (typeof window === "undefined") return;
+  const AudioCtx = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioCtx) return;
+  
+  try {
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    if (type === "ding-dong") {
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(880, now);
+      gain1.gain.setValueAtTime(0.2, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.5);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(659.25, now + 0.12);
+      gain2.gain.setValueAtTime(0.2, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.7);
+    } else if (type === "high-chime") {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(1100, now);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    } else if (type === "tri-tone") {
+      const tones = [523.25, 659.25, 783.99];
+      tones.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+        gain.gain.setValueAtTime(0.15, now + idx * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.1);
+        osc.stop(now + idx * 0.1 + 0.3);
+      });
+    }
+  } catch (e) {
+    console.error("Audio playback error:", e);
+  }
+}
 const AMBER   = "#E8920A";
 const SUCCESS = "#1A6B3A";
 
@@ -61,16 +123,52 @@ const TOKEN_STATUS_COLORS: Record<string, string> = {
   served: "bg-green-100 text-green-700",
 };
 
+type OrderNotification = {
+  id: string;
+  tokenNumber: number;
+  total: number;
+  status: string;
+  timestamp: Date;
+};
+
 export default function Dashboard() {
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const [period, setPeriod] = useState<Period>("Today");
   const [data, setData] = useState<AnalyticsData>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [showBell, setShowBell] = useState(false);
+  const [showSoundPopup, setShowSoundPopup] = useState(false);
+  const [paidSound, setPaidSound] = useState<"ding-dong" | "high-chime" | "tri-tone">("ding-dong");
+  const [unpaidSound, setUnpaidSound] = useState<"ding-dong" | "high-chime" | "tri-tone">("tri-tone");
+  const [notifications, setNotifications] = useState<OrderNotification[]>([]);
 
   useEffect(() => {
+    const savedPaid = localStorage.getItem("counter-paid-sound");
+    if (savedPaid && ["ding-dong", "high-chime", "tri-tone"].includes(savedPaid)) {
+      setPaidSound(savedPaid as "ding-dong" | "high-chime" | "tri-tone");
+    }
+    const savedUnpaid = localStorage.getItem("counter-unpaid-sound");
+    if (savedUnpaid && ["ding-dong", "high-chime", "tri-tone"].includes(savedUnpaid)) {
+      setUnpaidSound(savedUnpaid as "ding-dong" | "high-chime" | "tri-tone");
+    }
+  }, []);
+
+  const changePaidSound = (type: "ding-dong" | "high-chime" | "tri-tone") => {
+    setPaidSound(type);
+    localStorage.setItem("counter-paid-sound", type);
+    playSynthSound(type);
+  };
+
+  const changeUnpaidSound = (type: "ding-dong" | "high-chime" | "tri-tone") => {
+    setUnpaidSound(type);
+    localStorage.setItem("counter-unpaid-sound", type);
+    playSynthSound(type);
+  };
+
+  useEffect(() => {
+    setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -83,7 +181,7 @@ export default function Dashboard() {
     if (isInitial) setLoading(true); else setRefreshing(true);
     fetch(`/api/analytics?period=${p}`)
       .then(r => r.json())
-      .then(d => setData(d as AnalyticsData))
+      .then(d => { if (d && d.totalRevenue !== undefined) setData(d as AnalyticsData); })
       .catch(() => {})
       .finally(() => { setLoading(false); setRefreshing(false); });
   }, []);
@@ -94,6 +192,39 @@ export default function Dashboard() {
     setPeriod(p);
     loadData(p, false);
   };
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("dashboard_tokens")
+      .on("broadcast", { event: "token_update" }, () => {
+        loadData(period, false);
+      })
+      .on("broadcast", { event: "new_order" }, ({ payload }) => {
+        const status = payload.status || "pending";
+        if (status === "awaiting_payment") {
+          const savedUnpaid = localStorage.getItem("counter-unpaid-sound") || "tri-tone";
+          playSynthSound(savedUnpaid);
+        } else {
+          const savedPaid = localStorage.getItem("counter-paid-sound") || "ding-dong";
+          playSynthSound(savedPaid);
+        }
+
+        // Add to notifications list
+        const newNotif: OrderNotification = {
+          id: payload.tokenId,
+          tokenNumber: payload.tokenNumber || 0,
+          total: payload.total || 0,
+          status: status,
+          timestamp: new Date(),
+        };
+        setNotifications(prev => [newNotif, ...prev]);
+
+        loadData(period, false);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [period, loadData]);
 
   const pieData = [
     { name: "Tea",    value: data.teaRevenue,    color: MAROON },
@@ -114,12 +245,13 @@ export default function Dashboard() {
     : "hour";
 
   const shareReport = () => {
-    const text = `*Abhinandan ${period} Summary*\n📅 ${now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}\n\n💰 Revenue: ₹${data.totalRevenue.toLocaleString("en-IN")}\n   ☕ Tea: ₹${data.teaRevenue.toLocaleString("en-IN")}\n   🍟 Snacks: ₹${data.snacksRevenue.toLocaleString("en-IN")}\n\n📦 Orders: ${data.orderCount} (Avg ₹${data.avgOrder})\n🏆 Top Item: ${data.topItems[0]?.name ?? "—"} (${data.topItems[0]?.qty ?? 0} units)\n⏰ Peak Hour: ${data.peakHour}\n\n_Sent from Abhinandan App_`;
+    const dateStr = now ? now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "—";
+    const text = `*Abhinandan ${period} Summary*\n📅 ${dateStr}\n\n💰 Revenue: ₹${data.totalRevenue.toLocaleString("en-IN")}\n   ☕ Tea: ₹${data.teaRevenue.toLocaleString("en-IN")}\n   🍟 Snacks: ₹${data.snacksRevenue.toLocaleString("en-IN")}\n\n📦 Orders: ${data.orderCount} (Avg ₹${data.avgOrder})\n🏆 Top Item: ${data.topItems[0]?.name ?? "—"} (${data.topItems[0]?.qty ?? 0} units)\n⏰ Peak Hour: ${data.peakHour}\n\n_Sent from Abhinandan App_`;
     if (navigator.share) navigator.share({ text });
     else navigator.clipboard.writeText(text);
   };
 
-  const bellCount = Math.min(data.pendingTokenCount, 9);
+  const bellCount = notifications.length;
 
   if (loading) {
     return (
@@ -145,17 +277,17 @@ export default function Dashboard() {
 
         {/* Header */}
         <header className="sticky top-0 z-10 bg-[var(--gold-bg)] border-b border-[var(--border-warm)] px-4 lg:px-8 py-4 flex items-center justify-between">
-          <div className="lg:hidden"><Logo size={24} href="/dashboard" /></div>
+          <div className="w-10 h-10 lg:hidden shrink-0" />
           <div className="hidden lg:block">
             <h1 className="text-xl lg:text-2xl font-display text-[var(--maroon-deep)]">
-              Good {now.getHours() < 12 ? "morning" : now.getHours() < 17 ? "afternoon" : "evening"}, {user?.name ?? "Staff"}
+              Good {!now ? "day" : now.getHours() < 12 ? "morning" : now.getHours() < 17 ? "afternoon" : "evening"}, {user?.name ?? "Staff"}
             </h1>
             <p className="text-xs text-[var(--muted-warm)] mt-0.5">
-              {now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              {now ? now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "—"}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden md:block text-sm font-mono text-[var(--brown)]">{now.toLocaleTimeString("en-IN")}</span>
+            <span className="hidden md:block text-sm font-mono text-[var(--brown)]">{now ? now.toLocaleTimeString("en-IN") : "--:--:--"}</span>
             {refreshing && <Loader2 size={16} className="text-[var(--amber-brand)] animate-spin" />}
 
             {/* Bell dropdown */}
@@ -170,36 +302,81 @@ export default function Dashboard() {
                 )}
               </button>
               {showBell && (
-                <div className="absolute right-0 top-10 w-80 bg-white rounded-xl shadow-2xl border border-[var(--border-warm)] z-50">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-warm)]">
-                    <h3 className="font-bold text-sm text-[var(--maroon-deep)]">Notifications</h3>
-                    <button onClick={() => setShowBell(false)} className="text-[var(--muted-warm)] hover:text-[var(--brown)]"><X size={16} /></button>
+                <div className="absolute right-0 top-10 w-80 bg-white rounded-2xl border border-[var(--border-warm)] shadow-2xl overflow-hidden flex flex-col max-h-[380px] z-50">
+                  <div className="shrink-0 px-4 py-3 bg-[var(--gold-bg)]/50 border-b border-[var(--border-warm)] flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-sm text-[var(--maroon-deep)]">Notifications</span>
+                      {notifications.length > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-[var(--amber-brand)] text-white text-[9px] font-bold">
+                          {notifications.length} new
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button 
+                        onClick={() => { setShowSoundPopup(true); setShowBell(false); }} 
+                        className="p-1 hover:bg-[var(--hover-warm)] rounded text-[var(--muted-warm)] transition flex items-center justify-center" 
+                        title="Notification Sound Settings"
+                      >
+                        <Settings size={14} />
+                      </button>
+                      <button 
+                        onClick={() => setShowBell(false)} 
+                        className="p-1 hover:bg-[var(--hover-warm)] rounded text-[var(--muted-warm)] transition flex items-center justify-center"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="max-h-72 overflow-y-auto scrollbar-thin">
-                    {data.pendingTokenCount > 0 && (
-                      <Link href="/counter" onClick={() => setShowBell(false)}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--hover-warm)] transition-colors border-b border-[var(--border-warm)]">
-                        <span className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 grid place-items-center text-base shrink-0">⏳</span>
-                        <div>
-                          <p className="text-sm font-semibold text-[var(--ink)]">{data.pendingTokenCount} token{data.pendingTokenCount !== 1 ? "s" : ""} waiting</p>
-                          <p className="text-xs text-[var(--muted-warm)]">Tap to open counter queue</p>
-                        </div>
-                      </Link>
-                    )}
-                    {data.liveQueue.slice(0, 6).map((q) => (
-                      <div key={q.id} className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-warm)] last:border-0">
-                        <span className="font-mono text-xs font-bold text-[var(--maroon-deep)] w-9 shrink-0">#{String(q.tokenNumber).padStart(3, "0")}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-[var(--ink)] truncate">{q.items}</p>
-                          <p className="text-[10px] text-[var(--muted-warm)] capitalize">{q.status.replace("_", " ")}</p>
-                        </div>
-                        <span className="text-xs font-bold text-[var(--amber-brand)] shrink-0">₹{q.total}</span>
+
+                  <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-warm)] scrollbar-thin">
+                    {notifications.length === 0 ? (
+                      <div className="py-12 text-center text-xs text-[var(--muted-warm)]">
+                        <p className="font-medium">No new notifications</p>
+                        <p className="text-[10px] opacity-70 mt-0.5">Incoming orders will appear here</p>
                       </div>
-                    ))}
-                    {data.pendingTokenCount === 0 && data.liveQueue.length === 0 && (
-                      <div className="py-10 text-center text-sm text-[var(--muted-warm)]">All caught up! No pending tokens.</div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div key={n.id} className="p-3 hover:bg-[var(--hover-warm)]/40 transition flex items-start gap-2.5">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-xs text-[var(--maroon-deep)]">
+                                Token #{String(n.tokenNumber).padStart(3, "0")}
+                              </span>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                                n.status === "awaiting_payment" 
+                                  ? "bg-orange-50 text-orange-700 border border-orange-200" 
+                                  : "bg-green-50 text-green-700 border border-green-200"
+                              }`}>
+                                {n.status === "awaiting_payment" ? "Unpaid Bill" : "Paid Order"}
+                              </span>
+                            </div>
+                            <p className="text-xs text-[var(--muted-warm)] mt-1">
+                              Total: <span className="font-bold text-[var(--maroon-deep)]">₹{n.total}</span>
+                            </p>
+                            <p className="text-[9px] text-[var(--muted-warm)]/70 mt-0.5">
+                              {new Date(n.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                            </p>
+                          </div>
+                          <button 
+                            onClick={() => setNotifications(prev => prev.filter(item => item.id !== n.id))}
+                            className="p-1 text-[var(--muted-warm)] hover:text-red-500 rounded hover:bg-red-50 transition" 
+                            title="Dismiss"
+                          >
+                            <Check size={12} />
+                          </button>
+                        </div>
+                      ))
                     )}
                   </div>
+                  {notifications.length > 0 && (
+                    <button 
+                      onClick={() => setNotifications([])} 
+                      className="shrink-0 w-full py-2 bg-[var(--gold-bg)]/50 border-t border-[var(--border-warm)] text-center text-xs font-semibold text-[var(--maroon-deep)] hover:bg-[var(--hover-warm)] transition"
+                    >
+                      Clear All
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -503,7 +680,7 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="text-sm text-[var(--muted-warm)] space-y-1">
-              <p>📅 {now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</p>
+              <p>📅 {now ? now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }) : "—"}</p>
               <p>💰 Total Revenue: <span className="font-bold text-[var(--maroon-deep)]">₹{data.totalRevenue.toLocaleString("en-IN")}</span></p>
               <p>📦 Total Orders: <span className="font-bold text-[var(--maroon-deep)]">{data.orderCount}</span> · Avg ₹{data.avgOrder}</p>
               <p>🏆 Top Item: <span className="font-bold text-[var(--maroon-deep)]">{data.topItems[0]?.name ?? "—"} ({data.topItems[0]?.qty ?? 0} units)</span></p>
@@ -552,6 +729,69 @@ export default function Dashboard() {
         </div>
       </main>
       <BottomNav />
+
+      {/* ── Sound Chooser Modal ── */}
+      {showSoundPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowSoundPopup(false)}>
+          <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 shadow-2xl mx-4 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-base text-[var(--maroon-deep)] flex items-center gap-2">
+              <Settings size={18} className="text-[var(--amber-brand)]" />
+              Notification Sound Settings
+            </h3>
+            <p className="text-xs text-gray-500">Choose separate sounds for paid orders and unpaid bills:</p>
+            
+            <div className="space-y-4 my-2">
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-[var(--maroon-deep)] uppercase tracking-wide">🟢 Paid Order Sound</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {([
+                    { id: "ding-dong", label: "🔔 Ding-Dong Bell" },
+                    { id: "high-chime", label: "🔔 Sharp Chime" },
+                    { id: "tri-tone", label: "🔔 Tri-Tone Alert" },
+                  ] as const).map(opt => (
+                    <div key={opt.id} className="flex items-center justify-between p-2 rounded-xl border border-[#EDE8E0] hover:bg-[#F8F5F0] transition">
+                      <label className="flex items-center gap-2 cursor-pointer flex-1 text-xs font-semibold text-[var(--ink)]">
+                        <input type="radio" name="paid-sound-opt" checked={paidSound === opt.id} onChange={() => changePaidSound(opt.id)} className="accent-[var(--amber-brand)]" />
+                        {opt.label}
+                      </label>
+                      <button onClick={() => playSynthSound(opt.id)} className="p-1 hover:bg-white rounded border border-[#EDE8E0] text-[var(--amber-brand)] transition" title="Preview sound">
+                        ▶️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-[var(--maroon-deep)] uppercase tracking-wide">🟠 Unpaid Bill Sound</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {([
+                    { id: "ding-dong", label: "🔔 Ding-Dong Bell" },
+                    { id: "high-chime", label: "🔔 Sharp Chime" },
+                    { id: "tri-tone", label: "🔔 Tri-Tone Alert" },
+                  ] as const).map(opt => (
+                    <div key={opt.id} className="flex items-center justify-between p-2 rounded-xl border border-[#EDE8E0] hover:bg-[#F8F5F0] transition">
+                      <label className="flex items-center gap-2 cursor-pointer flex-1 text-xs font-semibold text-[var(--ink)]">
+                        <input type="radio" name="unpaid-sound-opt" checked={unpaidSound === opt.id} onChange={() => changeUnpaidSound(opt.id)} className="accent-[var(--amber-brand)]" />
+                        {opt.label}
+                      </label>
+                      <button onClick={() => playSynthSound(opt.id)} className="p-1 hover:bg-white rounded border border-[#EDE8E0] text-[var(--amber-brand)] transition" title="Preview sound">
+                        ▶️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button onClick={() => setShowSoundPopup(false)}
+              className="mt-2 w-full py-2.5 rounded-xl font-bold text-sm text-[var(--maroon-deep)]"
+              style={{ background: "linear-gradient(135deg, var(--amber-brand) 0%, #C4821A 100%)" }}>
+              Save Settings
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

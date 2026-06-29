@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BarChart2, Check, RotateCcw, Loader2 } from "lucide-react";
-import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
 import {
@@ -118,7 +117,7 @@ export default function TeaEntryPage() {
       <main className="flex-1 min-w-0 pb-20 lg:pb-0">
         <header className="sticky top-0 z-10 bg-[var(--maroon-deep)] text-white px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="lg:hidden"><Logo variant="light" size={24} /></div>
+            <div className="w-10 lg:hidden shrink-0" />
             <span className="text-sm opacity-80 font-semibold">Tea Counter</span>
           </div>
           <div className="flex items-center gap-3">

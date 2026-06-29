@@ -7,7 +7,6 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   BarChart, Bar,
 } from "recharts";
-import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
 
@@ -82,7 +81,7 @@ export default function SectionDashboard() {
         <header className="sticky top-0 z-10 border-b border-[var(--border-warm)] px-4 py-3 flex items-center justify-between"
           style={{ background: "var(--maroon-deep)" }}>
           <div className="flex items-center gap-3">
-            <div className="lg:hidden"><Logo variant="light" size={22} /></div>
+            <div className="w-10 lg:hidden shrink-0" />
             <div>
               <h1 className="font-display text-lg text-[var(--gold-pale)] leading-none">{sectionLabel}</h1>
               <p className="text-xs text-[var(--gold-pale)]/50">

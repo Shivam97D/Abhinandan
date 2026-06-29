@@ -9,7 +9,7 @@ import { createClient } from "@/utils/supabase/client";
 
 const ROLE_ROUTES: Record<string, string> = {
   owner:           "/dashboard",
-  section_manager: "/section-dashboard",
+  section_manager: "/serving",
   snacks_staff:    "/counter",
   tea_staff:       "/tea-entry",
 };

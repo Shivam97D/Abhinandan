@@ -11,46 +11,31 @@ const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-  console.log('Seeding menu items...')
+  console.log('Cleaning up existing database records...')
+  await prisma.teaQuickEntry.deleteMany({})
+  await prisma.payment.deleteMany({})
+  await prisma.token.deleteMany({})
+  await prisma.orderItem.deleteMany({})
+  await prisma.order.deleteMany({})
+  await prisma.menuItem.deleteMany({})
+  await prisma.user.deleteMany({})
+  console.log('Database cleaned successfully.')
 
+  console.log('Seeding deliverable menu items...')
   const snacksItems = [
-    { name: 'Samosa', price: 18, category: 'Fried' },
-    { name: 'Vada Pav', price: 20, category: 'Fried' },
-    { name: 'Batata Vada', price: 18, category: 'Fried' },
-    { name: 'Kachori', price: 20, category: 'Fried' },
-    { name: 'Pudachi Wadi', price: 25, category: 'Fried' },
-    { name: 'Misal Pav', price: 55, category: 'Spicy' },
-    { name: 'Poha', price: 30, category: 'Breakfast' },
-    { name: 'Upma', price: 30, category: 'Breakfast' },
-    { name: 'Thepla', price: 20, category: 'Breakfast' },
-    { name: 'Pav Bhaji', price: 65, category: 'Main' },
-    { name: 'Bhakri Pithla', price: 55, category: 'Main' },
-    { name: 'Bread Omelette', price: 40, category: 'Egg' },
-    { name: 'Spring Roll', price: 40, category: 'Rolls' },
-    { name: 'Pav Bhaji Roll', price: 50, category: 'Rolls' },
-    { name: 'Cheese Roll', price: 50, category: 'Rolls' },
-    { name: 'Paneer Roll', price: 55, category: 'Rolls' },
-    { name: 'Chivda', price: 20, category: 'Snacks' },
-    { name: 'Farsan', price: 25, category: 'Snacks' },
-  ]
-
-  const teaItems = [
-    { name: 'Masala Chai', price: 20, category: 'Tea' },
-    { name: 'Cutting Chai', price: 15, category: 'Tea' },
-    { name: 'Adrak Chai', price: 20, category: 'Tea' },
-    { name: 'Elaichi Chai', price: 20, category: 'Tea' },
-    { name: 'Special Chai', price: 25, category: 'Tea' },
-    { name: 'Black Tea', price: 15, category: 'Tea' },
-    { name: 'Lemon Tea', price: 25, category: 'Tea' },
-    { name: 'Green Tea', price: 30, category: 'Tea' },
+    { name: 'Vada Pav', price: 20, category: 'Snacks' },
+    { name: 'Poha', price: 25, category: 'Snacks' },
+    { name: 'Upma', price: 25, category: 'Snacks' },
+    { name: 'Shira', price: 30, category: 'Snacks' },
+    { name: 'Khichadi', price: 35, category: 'Snacks' },
+    { name: 'Udid Vada', price: 35, category: 'Snacks' },
   ]
 
   for (const item of snacksItems) {
-    await prisma.menuItem.upsert({
-      where: { id: `snacks_${item.name.toLowerCase().replace(/\s+/g, '_')}` },
-      update: { price: item.price, available: true },
-      create: {
-        id: `snacks_${item.name.toLowerCase().replace(/\s+/g, '_')}`,
+    const id = `snacks_${item.name.toLowerCase().replace(/\s+/g, '_')}`
+    await prisma.menuItem.create({
+      data: {
+        id,
         section: 'snacks',
         name: item.name,
         price: item.price,
@@ -59,45 +44,35 @@ async function main() {
       },
     })
   }
+  console.log(`Seeded ${snacksItems.length} snacks menu items.`)
 
-  for (const item of teaItems) {
-    await prisma.menuItem.upsert({
-      where: { id: `tea_${item.name.toLowerCase().replace(/\s+/g, '_')}` },
-      update: { price: item.price, available: true },
-      create: {
-        id: `tea_${item.name.toLowerCase().replace(/\s+/g, '_')}`,
-        section: 'tea',
-        name: item.name,
-        price: item.price,
-        category: item.category,
-        available: true,
-      },
-    })
-  }
-
-  console.log(`Seeded ${snacksItems.length} snacks + ${teaItems.length} tea items`)
-
-  console.log('Seeding staff users...')
-
-  await prisma.user.upsert({
-    where: { phone: '9999999999' },
-    update: {},
-    create: { id: 'user_owner', role: 'owner', name: 'Suresh Patil', phone: '9999999999' },
-  })
-  await prisma.user.upsert({
-    where: { phone: '9999999998' },
-    update: {},
-    create: { id: 'user_ramesh', role: 'snacks_staff', name: 'Ramesh', phone: '9999999998' },
-  })
-  await prisma.user.upsert({
-    where: { phone: '9999999997' },
-    update: {},
-    create: { id: 'user_sunita', role: 'tea_staff', name: 'Sunita', phone: '9999999997' },
+  console.log('Seeding initial staff users...')
+  await prisma.user.create({
+    data: {
+      id: 'user_owner',
+      role: 'owner',
+      name: 'Owner',
+      phone: '9999999999',
+    },
   })
 
-  console.log('Seeded 3 users (owner, snacks staff, tea staff)')
+  await prisma.user.create({
+    data: {
+      id: 'user_manager',
+      role: 'section_manager',
+      name: 'Manager',
+      phone: '9999999998',
+    },
+  })
+  console.log('Seeded Owner and Manager profiles.')
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1) })
-  .finally(async () => { await prisma.$disconnect(); await pool.end() })
+  .catch((e) => {
+    console.error('Error during seeding:', e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+    await pool.end()
+  })

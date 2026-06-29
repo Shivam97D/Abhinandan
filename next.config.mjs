@@ -12,9 +12,6 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 3600,
   },
-  experimental: {
-    optimizePackageImports: ["lucide-react", "recharts"],
-  },
 };
 
 export default nextConfig;

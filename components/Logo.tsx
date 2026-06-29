@@ -43,6 +43,6 @@ export function Logo({ variant = "dark", size = 32, withCup = true, href }: Logo
       </span>
     </div>
   );
-  if (href) return <Link href={href} className="flex items-center">{inner}</Link>;
+  if (href) return <Link href={href} className={`flex items-center ${color} hover:opacity-90 transition-opacity`}>{inner}</Link>;
   return inner;
 }

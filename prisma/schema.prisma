@@ -147,3 +147,39 @@ model TeaQuickEntry {
   staff     User?     @relation(fields: [staffId], references: [id])
   menuItem  MenuItem? @relation(fields: [itemId], references: [id])
 }
+
+// ─── Shop Settings ── singleton row, id = "default" ─────────────────────────
+model ShopSettings {
+  id                  String   @id @default("default")
+
+  // Shop info
+  shopName            String   @default("Abhinandan Tea & Snacks Centre")
+  location            String   @default("Pune, Maharashtra")
+  phone               String   @default("")
+  email               String   @default("")
+  gstNumber           String   @default("")
+  fssaiNumber         String   @default("")
+  website             String   @default("")
+
+  // UPI / Payment
+  upiId               String   @default("")
+  upiMerchantName     String   @default("Abhinandan Tea & Snacks")
+  teaPricePerCup      Float    @default(12)
+
+  // Shift timings
+  morningStart        String   @default("07:00")
+  morningEnd          String   @default("14:00")
+  eveningStart        String   @default("14:00")
+  eveningEnd          String   @default("22:00")
+
+  // Token
+  tokenResetTime      String   @default("07:00")
+
+  // Notifications
+  smsOnTokenReady     Boolean  @default(true)
+  dailyReportWhatsapp Boolean  @default(false)
+  manualUpiConfirm    Boolean  @default(true)
+
+  updatedAt           DateTime @updatedAt
+}
+

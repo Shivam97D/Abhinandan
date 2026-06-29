@@ -45,10 +45,18 @@ export async function POST(req: NextRequest) {
     const today = new Date().toISOString().split("T")[0];
     const tokenNumber = await getNextTokenNumber(today);
 
+    // Fetch manual UPI confirmation setting
+    const settings = await prisma.shopSettings.findUnique({
+      where: { id: "default" },
+    });
+    const manualUpiConfirm = settings?.manualUpiConfirm ?? true;
+
     // counter_pending = customer walked to counter, counter staff confirms payment later
     // awaiting_payment token status signals the counter queue to show "confirm payment" button
     const isCounterPending = paymentMethod === "counter_pending";
-    const tokenStatus = isCounterPending ? "awaiting_payment" : "pending";
+    const isUpiPending = paymentMethod === "upi" && manualUpiConfirm;
+    const tokenStatus = (isCounterPending || isUpiPending) ? "awaiting_payment" : "pending";
+
 
     const order = await prisma.order.create({
       data: {

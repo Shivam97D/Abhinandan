@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { Plus, Search, Pencil, Trash2, Loader2, X, ImageIcon } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
@@ -17,9 +18,6 @@ type MenuItem = {
   imageUrl: string | null;
 };
 
-const SNACK_CATS = ["Fried", "Rolls", "Sandwiches", "Sweets", "Specials"];
-const TEA_CATS   = ["Tea", "Coffee", "Lassi", "Juice", "Shakes", "Drinks"];
-
 const SECTION_EMOJI: Record<Section, string> = { snacks: "🍟", tea: "☕" };
 
 type FormState = {
@@ -34,7 +32,7 @@ type FormState = {
 };
 
 const BLANK: FormState = {
-  name: "", price: "", category: "Fried", section: "snacks",
+  name: "", price: "", category: "Snacks", section: "snacks",
   imageUrl: "", imageFile: null, available: true,
 };
 
@@ -42,12 +40,13 @@ export default function MenuPage() {
   const [items, setItems]       = useState<MenuItem[]>([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
-  const [tab, setTab]           = useState<"All" | Section>("All");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState<FormState>(BLANK);
   const [saving, setSaving]     = useState(false);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showCustomCat, setShowCustomCat] = useState(false);
+  const [customCat, setCustomCat] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = () => {
@@ -62,20 +61,32 @@ export default function MenuPage() {
   useEffect(() => { load(); }, []);
 
   const filtered = items.filter((i) => {
-    const matchTab = tab === "All" || i.section === tab;
     const matchSearch = i.name.toLowerCase().includes(search.toLowerCase()) ||
       i.category.toLowerCase().includes(search.toLowerCase());
-    return matchTab && matchSearch;
+    return matchSearch;
   });
 
-  const openAdd = () => { setForm(BLANK); setShowForm(true); };
+  // Dynamically compute existing categories from the snack items
+  const categories = Array.from(
+    new Set(["Snacks", ...items.filter(i => i.section === "snacks").map(i => i.category)])
+  ).filter(Boolean);
+
+  const openAdd = () => {
+    setShowCustomCat(false);
+    setCustomCat("");
+    setForm(BLANK);
+    setShowForm(true);
+  };
+
   const openEdit = (item: MenuItem) => {
+    setShowCustomCat(false);
+    setCustomCat("");
     setForm({
       id: item.id,
       name: item.name,
       price: String(item.price),
       category: item.category,
-      section: item.section,
+      section: "snacks",
       imageUrl: item.imageUrl || "",
       imageFile: null,
       available: item.available,
@@ -105,7 +116,12 @@ export default function MenuPage() {
   };
 
   const save = async () => {
+    const finalCategory = showCustomCat ? customCat.trim() : form.category;
     if (!form.name.trim() || !form.price || Number(form.price) <= 0) return;
+    if (!finalCategory) {
+      alert("Please specify a category");
+      return;
+    }
     setSaving(true);
 
     try {
@@ -125,8 +141,8 @@ export default function MenuPage() {
       const payload = {
         name: form.name.trim(),
         price: Number(form.price),
-        category: form.category,
-        section: form.section,
+        category: finalCategory,
+        section: "snacks",
         imageUrl: imageUrl || null,
         available: form.available,
       };
@@ -156,6 +172,8 @@ export default function MenuPage() {
       }
 
       setShowForm(false);
+      setShowCustomCat(false);
+      setCustomCat("");
     } catch {
       alert("Save failed. Please try again.");
     } finally {
@@ -171,7 +189,7 @@ export default function MenuPage() {
         {/* Header */}
         <header className="sticky top-0 z-10 bg-[var(--gold-bg)] border-b border-[var(--border-warm)] px-4 lg:px-8 py-4">
           <div className="flex flex-wrap items-center gap-3 justify-between">
-            <div>
+            <div className="pl-10 lg:pl-0">
               <h1 className="text-xl font-bold text-[var(--maroon-deep)]">Menu Management</h1>
               <p className="text-xs text-[var(--muted-warm)]">{filtered.length} items</p>
             </div>
@@ -190,21 +208,6 @@ export default function MenuPage() {
               </button>
             </div>
           </div>
-
-          {/* Section tabs */}
-          <div className="flex gap-2 mt-3">
-            {(["All", "snacks", "tea"] as const).map((t) => (
-              <button key={t} onClick={() => setTab(t)}
-                className="px-4 h-8 rounded-full text-xs font-semibold transition-all"
-                style={{
-                  background: tab === t ? "var(--maroon-deep)" : "white",
-                  color: tab === t ? "var(--gold-pale)" : "var(--muted-warm)",
-                  border: `1px solid ${tab === t ? "var(--maroon-deep)" : "var(--border-warm)"}`,
-                }}>
-                {t === "All" ? "All" : t === "snacks" ? "🍟 Snacks" : "☕ Tea & Drinks"}
-              </button>
-            ))}
-          </div>
         </header>
 
         {/* Grid */}
@@ -222,8 +225,7 @@ export default function MenuPage() {
                   {/* Image */}
                   <div className="relative aspect-square bg-[var(--gold-pale)]">
                     {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.name}
-                        className="w-full h-full object-cover"
+                      <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="200px"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                       />
                     ) : (
@@ -360,7 +362,7 @@ export default function MenuPage() {
                 <input
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Masala Chai"
+                  placeholder="e.g. Vada Pav"
                   className="w-full h-11 px-4 bg-[var(--gold-bg)] border border-[var(--border-warm)] rounded-lg text-[var(--ink)] focus:border-[var(--brown)] focus:outline-none"
                 />
               </div>
@@ -379,38 +381,37 @@ export default function MenuPage() {
                 />
               </div>
 
-              {/* Section + Category row */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--ink)] mb-1.5 uppercase tracking-wide">Section *</label>
-                  <select
-                    value={form.section}
-                    onChange={(e) => {
-                      const s = e.target.value as Section;
-                      setForm((f) => ({
-                        ...f,
-                        section: s,
-                        category: s === "snacks" ? "Fried" : "Tea",
-                      }));
-                    }}
-                    className="w-full h-11 px-3 bg-[var(--gold-bg)] border border-[var(--border-warm)] rounded-lg text-[var(--ink)] focus:border-[var(--brown)] focus:outline-none"
-                  >
-                    <option value="snacks">🍟 Snacks</option>
-                    <option value="tea">☕ Tea & Drinks</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--ink)] mb-1.5 uppercase tracking-wide">Category *</label>
-                  <select
-                    value={form.category}
-                    onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                    className="w-full h-11 px-3 bg-[var(--gold-bg)] border border-[var(--border-warm)] rounded-lg text-[var(--ink)] focus:border-[var(--brown)] focus:outline-none"
-                  >
-                    {(form.section === "snacks" ? SNACK_CATS : TEA_CATS).map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
+              {/* Category selection */}
+              <div className="mb-6">
+                <label className="block text-xs font-semibold text-[var(--ink)] mb-1.5 uppercase tracking-wide">Category *</label>
+                <select
+                  value={showCustomCat ? "new" : form.category}
+                  onChange={(e) => {
+                    if (e.target.value === "new") {
+                      setShowCustomCat(true);
+                    } else {
+                      setShowCustomCat(false);
+                      setForm((f) => ({ ...f, category: e.target.value }));
+                    }
+                  }}
+                  className="w-full h-11 px-3 bg-[var(--gold-bg)] border border-[var(--border-warm)] rounded-lg text-[var(--ink)] focus:border-[var(--brown)] focus:outline-none"
+                >
+                  {categories.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value="new">➕ Add Custom Category...</option>
+                </select>
+                {showCustomCat && (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      placeholder="Type custom category name..."
+                      value={customCat}
+                      onChange={(e) => setCustomCat(e.target.value)}
+                      className="w-full h-11 px-4 bg-[var(--gold-bg)] border border-[var(--border-warm)] rounded-lg text-[var(--ink)] focus:border-[var(--brown)] focus:outline-none text-sm"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Available toggle */}

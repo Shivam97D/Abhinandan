@@ -71,7 +71,7 @@ export default function ReportsPage() {
       <main className="flex-1 min-w-0 pb-20 lg:pb-0">
 
         <header className="sticky top-0 z-10 bg-[var(--gold-bg)] border-b border-[var(--border-warm)] px-4 lg:px-8 py-4 flex flex-wrap items-center gap-3 justify-between">
-          <div>
+          <div className="pl-10 lg:pl-0">
             <h1 className="text-xl font-bold text-[var(--maroon-deep)]">Reports</h1>
             <p className="text-xs text-[var(--muted-warm)]">Performance overview</p>
           </div>

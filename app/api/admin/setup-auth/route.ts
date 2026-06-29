@@ -9,9 +9,8 @@ const supabaseAdmin = createClient(
 )
 
 const STAFF = [
-  { username: 'suresh', email: 'suresh@abhinandan.in', password: 'Owner@2024', role: 'owner' },
-  { username: 'ramesh', email: 'ramesh@abhinandan.in', password: 'Staff@2024', role: 'snacks_staff' },
-  { username: 'sunita', email: 'sunita@abhinandan.in', password: 'Staff@2024', role: 'tea_staff' },
+  { username: 'Owner', email: 'owner@abhinandan.in', password: 'Owner@99', role: 'owner' },
+  { username: 'Manager', email: 'manager@abhinandan.in', password: 'Manager@88', role: 'section_manager' },
 ]
 
 export async function POST() {
@@ -25,7 +24,16 @@ export async function POST() {
       let authId: string
       if (alreadyExists) {
         authId = alreadyExists.id
-        results.push({ email: s.email, status: 'already_exists', id: authId })
+        // Update user password to match the requested one if it already exists
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authId, {
+          password: s.password,
+          user_metadata: { name: s.username, role: s.role },
+        })
+        if (updateError) {
+          results.push({ email: s.email, status: 'update_error', error: updateError.message })
+          continue
+        }
+        results.push({ email: s.email, status: 'updated_credentials', id: authId })
       } else {
         const { data, error } = await supabaseAdmin.auth.admin.createUser({
           email: s.email,

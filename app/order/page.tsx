@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Minus, ShoppingCart, X, Menu, Clock, ChevronRight, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { Plus, Minus, ShoppingCart, X, Menu, Clock, Loader2 } from "lucide-react";
 import { Logo, TeaCupIcon } from "@/components/Logo";
 import { useCartStore, useOrderStore } from "@/lib/store";
 import { getOrCreateSessionId } from "@/lib/session";
@@ -29,8 +30,10 @@ type PastOrder = {
 
 export default function OrderPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItemAPI[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
   const [cat, setCat] = useState("All");
   const [mobile, setMobile] = useState("");
   const [step, setStep] = useState<"menu" | "review" | "placing">("menu");
@@ -40,14 +43,25 @@ export default function OrderPage() {
   const { cart, addItem, removeItem, getItems, getTotal, getCount, clearCart } = useCartStore();
   const { setOrder } = useOrderStore();
 
-  // Load menu from DB
-  useEffect(() => {
+  const loadMenu = () => {
+    setMenuLoading(true);
+    setMenuError(null);
     fetch("/api/menu")
-      .then((r) => r.json())
-      .then((d) => setMenuItems(d.items || []))
-      .catch(() => {})
+      .then((r) => {
+        if (!r.ok) throw new Error(`Server error ${r.status}`);
+        return r.json();
+      })
+      .then((d) => {
+        if (!d.items || d.items.length === 0) throw new Error("No menu items found");
+        setMenuItems(d.items);
+      })
+      .catch((e: Error) => setMenuError(e.message))
       .finally(() => setMenuLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { setMounted(true); }, []);
+  // Load menu from DB
+  useEffect(() => { loadMenu(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dynamic categories from DB
   const CATS = useMemo(() => {
@@ -236,7 +250,7 @@ export default function OrderPage() {
               }}
             >
               <span className="flex items-center gap-2">
-                <span className="text-xl">💳</span>
+                <span className="text-xl">📱</span>
                 Pay via UPI
               </span>
               <span className="opacity-80 text-sm">₹{total} →</span>
@@ -254,7 +268,7 @@ export default function OrderPage() {
               }}
             >
               <span className="flex items-center gap-2">
-                <span className="text-xl">🧾</span>
+                <span className="text-xl">💵</span>
                 Pay at Counter
               </span>
               <span className="opacity-70 text-sm">₹{total} →</span>
@@ -283,9 +297,9 @@ export default function OrderPage() {
           >
             <Menu size={20} />
           </button>
-          <button onClick={() => count > 0 && setStep("review")} className="relative p-2">
+          <button onClick={() => mounted && count > 0 && setStep("review")} className="relative p-2">
             <ShoppingCart size={22} className="text-[var(--maroon-deep)]" strokeWidth={1.75} />
-            {count > 0 && (
+            {mounted && count > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--amber-brand)] text-white text-[11px] font-bold rounded-full grid place-items-center">
                 {count}
               </span>
@@ -351,9 +365,19 @@ export default function OrderPage() {
           <Loader2 size={32} className="text-[var(--amber-brand)] animate-spin" />
           <p className="text-sm text-[var(--muted-warm)]">Loading menu…</p>
         </div>
+      ) : menuError ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4 px-6 text-center">
+          <TeaCupIcon className="w-12 h-12 text-[var(--muted-warm)] opacity-40" />
+          <p className="text-sm font-semibold text-[var(--maroon-deep)]">Could not load menu</p>
+          <p className="text-xs text-[var(--muted-warm)]">{menuError}</p>
+          <button onClick={loadMenu}
+            className="px-5 h-10 rounded-xl btn-amber text-sm font-semibold">
+            Retry
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 px-4 py-3">
-          {filtered.map((item) => {
+          {filtered.map((item, idx) => {
             const qty = cart[item.id] || 0;
             return (
               <div
@@ -365,11 +389,13 @@ export default function OrderPage() {
                 {/* Image area */}
                 <div className="relative aspect-square bg-[var(--gold-pale)]">
                   {item.imageUrl ? (
-                    <img
+                    <Image
                       src={item.imageUrl}
                       alt={item.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 512px) 50vw, 256px"
+                      priority={idx < 4}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-4xl">
@@ -408,7 +434,7 @@ export default function OrderPage() {
       )}
 
       {/* Floating cart */}
-      {count > 0 && (
+      {mounted && count > 0 && (
         <div className="fixed bottom-4 left-4 right-4 max-w-lg mx-auto z-20">
           <button
             onClick={() => setStep("review")}
@@ -447,43 +473,54 @@ export default function OrderPage() {
                   <p className="text-xs text-[var(--muted-warm)]/60 mt-1">Orders on this device appear here</p>
                 </div>
               ) : (
-                pastOrders.map((order) => (
-                  <div key={order.id} className="card-warm p-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-bold text-sm text-[var(--maroon-deep)]">
-                          Token #{order.tokenNumber || "—"}
-                        </p>
-                        <p className="text-[10px] text-[var(--muted-warm)]">
-                          {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                            day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
-                          })}
-                        </p>
+                pastOrders.map((order) => {
+                  const tokenStatus = order.token?.status || "";
+                  const statusBadge = tokenStatus === "served" ? "bg-green-100 text-green-700"
+                    : tokenStatus === "ready" ? "bg-amber-100 text-amber-700"
+                    : tokenStatus === "preparing" ? "bg-red-100 text-red-700"
+                    : "bg-[var(--gold-pale)] text-[var(--pending-brand)]";
+                  const billUrl = order.tokenNumber
+                    ? `/order/token?token=${order.tokenNumber}&orderId=${order.id}&method=${order.paymentMethod === 'counter_pending' ? 'counter' : 'upi'}`
+                    : null;
+                  return (
+                    <button
+                      key={order.id}
+                      onClick={() => { if (billUrl) { setShowHistory(false); window.location.href = billUrl; } }}
+                      className="card-warm p-3 w-full text-left hover:shadow-md active:scale-[0.99] transition-all cursor-pointer"
+                    >
+                      {/* Header row */}
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-base text-[var(--maroon-deep)] font-mono">#{order.tokenNumber || "—"}</span>
+                          {tokenStatus && (
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${statusBadge}`}>
+                              {tokenStatus.replace(/_/g, " ")}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-bold text-[var(--amber-brand)]">₹{order.total}</span>
                       </div>
-                      <span className="text-sm font-bold text-[var(--amber-brand)]">₹{order.total}</span>
-                    </div>
-                    <p className="text-xs text-[var(--muted-warm)] truncate">
-                      {order.items.map((i) => `${i.menuItem.name} ×${i.qty}`).join(" · ")}
-                    </p>
-                    {order.token && (
-                      <div className="flex items-center justify-between mt-2">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          order.token.status === "served" ? "bg-green-100 text-green-700"
-                          : order.token.status === "ready" ? "bg-amber-100 text-amber-700"
-                          : "bg-[var(--gold-pale)] text-[var(--pending-brand)]"
-                        }`}>
-                          {order.token.status.replace("_", " ").toUpperCase()}
-                        </span>
-                        <button
-                          onClick={() => { setShowHistory(false); window.location.href = `/token/${order.token!.id}`; }}
-                          className="text-[var(--amber-brand)] text-xs flex items-center gap-0.5 hover:underline"
-                        >
-                          Track <ChevronRight size={12} />
-                        </button>
+                      {/* Date */}
+                      <p className="text-[10px] text-[var(--muted-warm)] mb-1.5">
+                        {new Date(order.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                        {" · "}
+                        {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                      </p>
+                      {/* Itemized */}
+                      <div className="space-y-0.5 border-t border-[var(--border-warm)] pt-1.5">
+                        {order.items.map((item, i) => (
+                          <div key={i} className="flex justify-between text-xs">
+                            <span className="text-[var(--ink)]">{item.menuItem.name} ×{item.qty}</span>
+                            <span className="font-semibold text-[var(--maroon-deep)]">₹{item.price * item.qty}</span>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                ))
+                      {billUrl && (
+                        <p className="text-[10px] text-[var(--amber-brand)] mt-2 font-semibold">Tap to view bill →</p>
+                      )}
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>

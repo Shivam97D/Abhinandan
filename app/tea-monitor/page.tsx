@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Coffee, Wifi, WifiOff, AlertCircle, Loader2 } from "lucide-react";
-import { Logo } from "@/components/Logo";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { createClient } from "@/utils/supabase/client";
@@ -97,7 +96,7 @@ export default function TeaMonitorPage() {
 
         <header className="sticky top-0 z-10 bg-[var(--gold-bg)] border-b border-[var(--border-warm)] px-4 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="lg:hidden"><Logo size={22} /></div>
+            <div className="w-10 lg:hidden shrink-0" />
             <div>
               <h1 className="font-display text-xl text-[var(--maroon-deep)]">Tea Auto-Monitor</h1>
               <p className="text-xs text-[var(--muted-warm)]">UPI payments → tea orders, automatically</p>
