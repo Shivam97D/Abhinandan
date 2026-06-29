@@ -53,3 +53,25 @@
   - Restored the remote URL to standard secure URL after push so that the PAT is never stored in plaintext on disk.
 - **New requirements found:** Git sync check added to boot rules.
 - **Status:** DONE
+
+---
+
+### [2026-06-29 20:34] P3 — Safe Seeding, Udid Vada Image & Suresh Owner Access
+- **Prompt:** Fix the seed script to be non-destructive, upload Udid Vada image, make sure payment settings are dynamically loaded, add database seeding rules to RULES.md, and resolve why Suresh can only see the Snacks POS tab.
+- **Files created:**
+  - `scripts/check-users.mjs` (created temporarily, deleted after use)
+  - `scripts/check-supabase-users.mjs` (created temporarily, deleted after use)
+  - `scripts/make-suresh-owner.mjs` (created temporarily, deleted after use)
+- **Files edited:**
+  - `abhinandan-app/prisma/seed.ts` — Replaced table deletes and MenuItem/User creations with safe, non-destructive upserts.
+  - `abhinandan-app/scripts/upload-downloads.mjs` — Added mapping for `snacks_udid_vada` to `/Users/admin/Downloads/udid vada.jpeg`.
+  - `abhinandan-app/RULES.md` — Added section 10. Database Seeding Discipline guidelines.
+- **Commands run:**
+  - `node scripts/upload-downloads.mjs` — Uploaded the Udid Vada image and updated PostgreSQL.
+  - `node scripts/make-suresh-owner.mjs` — Updated Suresh's role to `owner` in Supabase Auth user metadata and database.
+  - `npx vercel --prod --yes` — Deployed force-dynamic changes directly to Vercel production to override caching.
+- **Decisions:**
+  - Replaced destructive table purges in `seed.ts` with upserts to preserve customized database records.
+  - Discovered Suresh's user account in Supabase was set to `snacks_staff` instead of `owner`. Corrected his role programmatically.
+- **New requirements found:** Seeding rules added to system guidelines.
+- **Status:** DONE
