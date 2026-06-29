@@ -148,3 +148,12 @@ A well-formed prompt from the user should specify:
 - **Acceptance** (how to know it's done)
 
 The agent should request these if missing before starting — especially for features that touch multiple files.
+
+---
+
+## 11. Database Seeding Discipline
+
+- **Never write destructive seed scripts:** Seeding must be strictly non-destructive. Never run `deleteMany` or clean operations that flush existing user-uploaded images, order history, configuration settings, or registered credentials, unless explicitly requested by the user.
+- **Use Prisma `upsert`:** When seeding menu items, settings, or user profiles, always use Prisma's `upsert` query. If the record already exists, only update fields like name, category, or default price, and **never reset/overwrite custom fields** like `imageUrl` or `supabaseId`.
+- **Only seed requested data:** Never seed random or placeholder data that conflicts with existing setups. Only seed the specific data/configuration that the user explicitly requests.
+
