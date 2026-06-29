@@ -28,7 +28,8 @@ const MAPPING = {
   'snacks_poha': '/Users/admin/Downloads/pohe .jpg',
   'snacks_upma': '/Users/admin/Downloads/Upma.jpeg',
   'snacks_shira': '/Users/admin/Downloads/shira.jpeg',
-  'snacks_khichadi': '/Users/admin/Downloads/shabudana.jpeg'
+  'snacks_khichadi': '/Users/admin/Downloads/shabudana.jpeg',
+  'snacks_udid_vada': '/Users/admin/Downloads/udid vada.jpeg'
 };
 
 async function main() {

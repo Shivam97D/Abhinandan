@@ -11,15 +11,7 @@ const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-  console.log('Cleaning up existing database records...')
-  await prisma.teaQuickEntry.deleteMany({})
-  await prisma.payment.deleteMany({})
-  await prisma.token.deleteMany({})
-  await prisma.orderItem.deleteMany({})
-  await prisma.order.deleteMany({})
-  await prisma.menuItem.deleteMany({})
-  await prisma.user.deleteMany({})
-  console.log('Database cleaned successfully.')
+  console.log('Running safe database seed (non-destructive)...')
 
   console.log('Seeding deliverable menu items...')
   const snacksItems = [
@@ -33,8 +25,14 @@ async function main() {
 
   for (const item of snacksItems) {
     const id = `snacks_${item.name.toLowerCase().replace(/\s+/g, '_')}`
-    await prisma.menuItem.create({
-      data: {
+    await prisma.menuItem.upsert({
+      where: { id },
+      update: {
+        name: item.name,
+        price: item.price,
+        category: item.category,
+      },
+      create: {
         id,
         section: 'snacks',
         name: item.name,
@@ -44,11 +42,17 @@ async function main() {
       },
     })
   }
-  console.log(`Seeded ${snacksItems.length} snacks menu items.`)
+  console.log(`Seeded/Updated ${snacksItems.length} snacks menu items.`)
 
   console.log('Seeding initial staff users...')
-  await prisma.user.create({
-    data: {
+  await prisma.user.upsert({
+    where: { id: 'user_owner' },
+    update: {
+      role: 'owner',
+      name: 'Owner',
+      phone: '9999999999',
+    },
+    create: {
       id: 'user_owner',
       role: 'owner',
       name: 'Owner',
@@ -56,8 +60,14 @@ async function main() {
     },
   })
 
-  await prisma.user.create({
-    data: {
+  await prisma.user.upsert({
+    where: { id: 'user_manager' },
+    update: {
+      role: 'section_manager',
+      name: 'Manager',
+      phone: '9999999998',
+    },
+    create: {
       id: 'user_manager',
       role: 'section_manager',
       name: 'Manager',
