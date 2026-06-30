@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 
@@ -13,7 +14,7 @@ export async function GET() {
 
     const user = await prisma.user.findFirst({
       where: { supabaseId: authUser.id },
-      select: { id: true, name: true, role: true, section: true, phone: true, supabaseId: true },
+      select: { id: true, name: true, role: true, section: true, phone: true, supabaseId: true, sessionToken: true },
     });
 
     if (!user) {
@@ -28,6 +29,15 @@ export async function GET() {
           supabaseId: authUser.id,
         },
       });
+    }
+
+    // Verify single-device owner session
+    if (user.role === "owner" && authUser.email !== "admin@abhinandan.in") {
+      const activeCookieToken = cookies().get("owner_session_token")?.value;
+      if (!activeCookieToken || activeCookieToken !== user.sessionToken) {
+        console.warn(`[Session Mismatch] User: ${authUser.email}. Active: ${user.sessionToken}, Cookie: ${activeCookieToken}`);
+        return NextResponse.json({ user: null, sessionMismatch: true });
+      }
     }
 
     return NextResponse.json({ user });

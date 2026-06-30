@@ -59,6 +59,7 @@ model User {
   name         String
   phone        String?        @unique
   supabaseId   String?        @unique
+  sessionToken String?        // Track active login session for single-device enforcement
   section      Section?       // only for section_manager role
   createdAt    DateTime       @default(now())
   teaEntries   TeaQuickEntry[]

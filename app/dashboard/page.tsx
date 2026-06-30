@@ -174,7 +174,19 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/users/me").then(r => r.json()).then(d => { if (d.user) setUser(d.user); }).catch(() => {});
+    fetch("/api/users/me")
+      .then(r => r.json())
+      .then(d => {
+        if (d.sessionMismatch) {
+          alert("Logged out: Your account has been logged in from another device.");
+          fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+            window.location.href = "/login?reason=session_expired";
+          });
+          return;
+        }
+        if (d.user) setUser(d.user);
+      })
+      .catch(() => {});
   }, []);
 
   const loadData = useCallback((p: Period, isInitial = false) => {

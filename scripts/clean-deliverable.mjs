@@ -71,6 +71,7 @@ async function main() {
 
   const NEW_USERS = [
     { username: "Owner", email: "owner@abhinandan.in", password: "Owner@908", role: "owner", name: "Owner" },
+    { username: "Admin", email: "admin@abhinandan.in", password: "Admin@908", role: "owner", name: "Admin" },
     { username: "Manager", email: "manager@abhinandan.in", password: "Manager@908", role: "section_manager", name: "Manager" },
     { username: "Snacks", email: "snacks@abhinandan.in", password: "Snacks@908", role: "snacks_staff", name: "Snacks Staff" },
     { username: "Tea", email: "tea@abhinandan.in", password: "Tea@908", role: "tea_staff", name: "Tea Staff" },

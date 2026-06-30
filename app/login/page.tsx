@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { TeaCupIcon } from "@/components/Logo";
 import { createClient } from "@/utils/supabase/client";
@@ -14,13 +14,15 @@ const ROLE_ROUTES: Record<string, string> = {
   tea_staff:       "/tea-entry",
 };
 
-export default function LoginPage() {
+function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reason = searchParams.get("reason");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +42,22 @@ export default function LoginPage() {
     }
 
     const role = (data.user?.user_metadata?.role as string) || "owner";
+
+    // Set up owner single-device session (exempting the developer admin account)
+    if (role === "owner" && email !== "admin@abhinandan.in") {
+      try {
+        const sRes = await fetch("/api/auth/session", { method: "POST" });
+        if (sRes.ok) {
+          const { sessionToken } = await sRes.json();
+          if (sessionToken) {
+            document.cookie = `owner_session_token=${sessionToken}; path=/; max-age=31536000; SameSite=Lax;`;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to establish session token:", err);
+      }
+    }
+
     router.push(ROLE_ROUTES[role] || "/dashboard");
   };
 
@@ -106,6 +124,12 @@ export default function LoginPage() {
       {/* ── Right: login form ─────────────────────────────── */}
       <div className="flex-1 bg-[var(--gold-bg)] flex items-center justify-center p-8">
         <form onSubmit={handleSubmit} className="w-full max-w-[360px]">
+
+          {reason === "session_expired" && (
+            <div className="mb-6 text-sm text-[#A16207] bg-yellow-50 border border-yellow-200 rounded-xl p-3.5 text-left">
+              💡 <b>Logged out:</b> Your account was logged in from another device.
+            </div>
+          )}
 
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-[var(--maroon-deep)]">Welcome Back</h1>
@@ -181,5 +205,13 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500 font-medium">Loading login…</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

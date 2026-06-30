@@ -44,10 +44,24 @@ export default function SectionDashboard() {
   }, []);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/users/me").then(r => r.json()).then(d => setUser(d.user ?? null)).catch(() => {}),
-      fetch("/api/staff").then(r => r.json()).then(d => setStaff(d.staff || [])).catch(() => {}),
-    ]).finally(() => {});
+    fetch("/api/users/me")
+      .then(r => r.json())
+      .then(d => {
+        if (d.sessionMismatch) {
+          alert("Logged out: Your account has been logged in from another device.");
+          fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+            window.location.href = "/login?reason=session_expired";
+          });
+          return;
+        }
+        if (d.user) setUser(d.user ?? null);
+      })
+      .catch(() => {});
+
+    fetch("/api/staff")
+      .then(r => r.json())
+      .then(d => setStaff(d.staff || []))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
