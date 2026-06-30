@@ -171,7 +171,7 @@ export default function CounterPage() {
 
   // UPI settings fetched from DB settings
   const [upiId, setUpiId] = useState("");
-  const [upiName, setUpiName] = useState("Abhinandan Tea & Snacks");
+  const [upiName, setUpiName] = useState("Nyahari Tea & Snacks");
   useEffect(() => {
     fetch("/api/settings")
       .then(r => r.json())
@@ -327,7 +327,7 @@ export default function CounterPage() {
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Bill #${tokenNumber} — Abhinandan</title>
+<title>Bill #${tokenNumber} — Nyahari</title>
 <style>
   /* Thermal receipt CSS — works for 58mm and 80mm printers */
   @page { margin: 0; size: 80mm auto; }
@@ -361,7 +361,7 @@ export default function CounterPage() {
 </head>
 <body>
   <div class="center">
-    <div class="shop-name">अभिनंदन</div>
+    <div class="shop-name">न्याहारी</div>
     <div class="shop-sub">Tea & Snacks Centre</div>
     <div class="shop-sub">Pune, Maharashtra</div>
   </div>
@@ -859,7 +859,7 @@ export default function CounterPage() {
                             <div className="flex gap-2 items-center">
                               <div className="bg-white border-2 border-blue-500 rounded-lg p-1.5 shrink-0">
                                 <QRCode
-                                  value={`upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${entry.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${entry.tokenNumber} Abhinandan`)}`}
+                                  value={`upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${entry.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${entry.tokenNumber} Nyahari`)}`}
                                   size={72}
                                 />
                               </div>

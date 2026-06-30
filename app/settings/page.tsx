@@ -28,7 +28,7 @@ type Settings = {
 };
 
 const DEFAULTS: Settings = {
-  shopName: "Abhinandan Tea & Snacks Centre",
+  shopName: "Nyahari Tea & Snacks Centre",
   location: "Pune, Maharashtra",
   phone: "",
   email: "",
@@ -36,7 +36,7 @@ const DEFAULTS: Settings = {
   fssaiNumber: "",
   website: "",
   upiId: "",
-  upiMerchantName: "Abhinandan Tea & Snacks",
+  upiMerchantName: "Nyahari Tea & Snacks",
   teaPricePerCup: 12,
   morningStart: "07:00",
   morningEnd: "14:00",
@@ -214,7 +214,7 @@ export default function SettingsPage() {
               <Field label="Shop Name">
                 <input className={INPUT} value={s.shopName}
                   onChange={(e) => set("shopName", e.target.value)}
-                  placeholder="Abhinandan Tea & Snacks Centre" />
+                  placeholder="Nyahari Tea & Snacks Centre" />
               </Field>
               <Field label="Location / Address">
                 <input className={INPUT} value={s.location}
@@ -236,7 +236,7 @@ export default function SettingsPage() {
               <Field label="Website">
                 <input className={INPUT} value={s.website}
                   onChange={(e) => set("website", e.target.value)}
-                  placeholder="https://abhinandan.in" />
+                  placeholder="https://nyahari.in" />
               </Field>
             </Section>
 
@@ -271,7 +271,7 @@ export default function SettingsPage() {
                 note="Shown inside Google Pay / PhonePe when customer scans">
                 <input className={INPUT} value={s.upiMerchantName}
                   onChange={(e) => set("upiMerchantName", e.target.value)}
-                  placeholder="Abhinandan Tea & Snacks" />
+                  placeholder="Nyahari Tea & Snacks" />
               </Field>
               <Field label="Tea Price per Cup (₹)"
                 note="SMS auto-detection: UPI credit ÷ this value = number of cups">

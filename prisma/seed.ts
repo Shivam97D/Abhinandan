@@ -80,11 +80,13 @@ async function main() {
   await prisma.shopSettings.upsert({
     where: { id: 'default' },
     update: {
+      shopName: 'Nyahari Tea & Snacks Centre',
       upiId: 'paytmqr722wbp@ptys',
       upiMerchantName: 'Paytm',
     },
     create: {
       id: 'default',
+      shopName: 'Nyahari Tea & Snacks Centre',
       upiId: 'paytmqr722wbp@ptys',
       upiMerchantName: 'Paytm',
     },

@@ -95,7 +95,7 @@ function BillModal({ order, onClose }: { order: DisplayOrder; onClose: () => voi
             <p className="text-[10px] uppercase tracking-widest font-bold text-white/70 leading-none mb-0.5">
               {isCounter ? "Counter Order" : "Customer App Order"}
             </p>
-            <p className="text-white text-sm font-bold">Abhinandan Tea & Snacks Centre</p>
+            <p className="text-white text-sm font-bold">Nyahari Tea & Snacks Centre</p>
             <p className="text-white/60 text-[10px] mt-0.5">Pune, Maharashtra</p>
           </div>
           <div className="text-right">
@@ -179,7 +179,7 @@ function BillModal({ order, onClose }: { order: DisplayOrder; onClose: () => voi
         {/* Footer */}
         <div className="px-4 pb-4 bg-white text-center border-t border-dashed border-[#E8D5C4] pt-3">
           <p className="text-[10px] text-[#9C7A6A]">Thank you for ordering! 🙏</p>
-          <p className="text-[9px] text-[#C4A882] mt-0.5">Abhinandan Tea & Snacks Centre · Pune, Maharashtra</p>
+          <p className="text-[9px] text-[#C4A882] mt-0.5">Nyahari Tea & Snacks Centre · Pune, Maharashtra</p>
         </div>
       </div>
     </div>

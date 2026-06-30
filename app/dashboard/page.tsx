@@ -246,7 +246,7 @@ export default function Dashboard() {
 
   const shareReport = () => {
     const dateStr = now ? now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "—";
-    const text = `*Abhinandan ${period} Summary*\n📅 ${dateStr}\n\n💰 Revenue: ₹${data.totalRevenue.toLocaleString("en-IN")}\n   ☕ Tea: ₹${data.teaRevenue.toLocaleString("en-IN")}\n   🍟 Snacks: ₹${data.snacksRevenue.toLocaleString("en-IN")}\n\n📦 Orders: ${data.orderCount} (Avg ₹${data.avgOrder})\n🏆 Top Item: ${data.topItems[0]?.name ?? "—"} (${data.topItems[0]?.qty ?? 0} units)\n⏰ Peak Hour: ${data.peakHour}\n\n_Sent from Abhinandan App_`;
+    const text = `*Nyahari ${period} Summary*\n📅 ${dateStr}\n\n💰 Revenue: ₹${data.totalRevenue.toLocaleString("en-IN")}\n   ☕ Tea: ₹${data.teaRevenue.toLocaleString("en-IN")}\n   🍟 Snacks: ₹${data.snacksRevenue.toLocaleString("en-IN")}\n\n📦 Orders: ${data.orderCount} (Avg ₹${data.avgOrder})\n🏆 Top Item: ${data.topItems[0]?.name ?? "—"} (${data.topItems[0]?.qty ?? 0} units)\n⏰ Peak Hour: ${data.peakHour}\n\n_Sent from Nyahari App_`;
     if (navigator.share) navigator.share({ text });
     else navigator.clipboard.writeText(text);
   };

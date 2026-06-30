@@ -72,7 +72,7 @@ export default function LoginPage() {
                 className="font-bold text-2xl text-[var(--gold-pale)] leading-none block"
                 style={{ fontFamily: "var(--font-deva, 'Noto Serif Devanagari', serif)" }}
               >
-                अभिनंदन
+                न्याहारी
               </span>
               <span className="text-xs text-[var(--gold-pale)]/50 tracking-wider uppercase">Tea & Snacks Centre</span>
             </div>

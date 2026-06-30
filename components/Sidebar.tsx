@@ -58,7 +58,7 @@ function UserFooter({ name, role }: { name: string; role: string }) {
         {name ? name[0] : "A"}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate text-[var(--gold-pale)] capitalize">{name || "Abhinandan"}</p>
+        <p className="text-sm font-semibold truncate text-[var(--gold-pale)] capitalize">{name || "Nyahari"}</p>
         <p className="text-[11px] text-[var(--gold-pale)]/40">{displayRole}</p>
       </div>
       <button

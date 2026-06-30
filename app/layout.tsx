@@ -20,13 +20,13 @@ const devanagari = Noto_Serif_Devanagari({
 });
 
 export const metadata: Metadata = {
-  title: "अभिनंदन — Tea & Snacks Centre",
-  description: "Abhinandan Tea & Snacks Centre — Order, track, and manage.",
+  title: "न्याहारी — Tea & Snacks Centre",
+  description: "Nyahari Tea & Snacks Centre — Order, track, and manage.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Abhinandan",
+    title: "Nyahari",
   },
   other: {
     "mobile-web-app-capable": "yes",

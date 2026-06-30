@@ -39,7 +39,7 @@ export function Logo({ variant = "dark", size = 32, withCup = true, href }: Logo
         className="font-bold leading-none"
         style={{ fontFamily: "var(--font-deva, 'Noto Serif Devanagari', serif)", fontSize: size * 0.85 }}
       >
-        अभिनंदन
+        न्याहारी
       </span>
     </div>
   );

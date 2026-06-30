@@ -60,7 +60,7 @@ export default function ReportsPage() {
   }));
 
   const shareReport = () => {
-    const text = `*Abhinandan ${period} Report*\n\n💰 Revenue: ₹${data.totalRevenue.toLocaleString("en-IN")}\n📦 Orders: ${data.orderCount}\n📊 Avg Order: ₹${data.avgOrder}\n🏆 Top Item: ${data.topItems[0]?.name ?? "—"}\n\n_via Abhinandan App_`;
+    const text = `*Nyahari ${period} Report*\n\n💰 Revenue: ₹${data.totalRevenue.toLocaleString("en-IN")}\n📦 Orders: ${data.orderCount}\n📊 Avg Order: ₹${data.avgOrder}\n🏆 Top Item: ${data.topItems[0]?.name ?? "—"}\n\n_via Nyahari App_`;
     if (navigator.share) navigator.share({ text });
     else navigator.clipboard.writeText(text);
   };

@@ -130,7 +130,7 @@ const STATUS_CFG: Record<string, StatusCfg> = {
     label: "Served",
     banner: "border-gray-300 bg-gray-50 text-gray-600",
     heroTitle: "Order Served!",
-    heroDesc: "Enjoy your food. Thank you for ordering from Abhinandan! 🙏",
+    heroDesc: "Enjoy your food. Thank you for ordering from Nyahari! 🙏",
     heroBg: "bg-gray-50",
     heroIconEl: <div className="w-20 h-20 rounded-full bg-gray-100 grid place-items-center"><Check size={40} className="text-gray-500" /></div>,
   },
@@ -190,7 +190,7 @@ function BillCard({
           <p className="text-[10px] uppercase tracking-widest font-bold text-white/70 leading-none mb-0.5">
             {isCounter ? "Pay at Counter" : "Show to Counter Staff"}
           </p>
-          <p className="text-white text-xs font-semibold">Abhinandan Tea & Snacks Centre</p>
+          <p className="text-white text-xs font-semibold">Nyahari Tea & Snacks Centre</p>
         </div>
         <div className="text-right">
           {/* Live ticking clock — proves bill is live, not a screenshot */}
@@ -270,8 +270,8 @@ function BillCard({
       {/* ── Footer ── */}
       <div className="px-4 pb-4 pt-1 text-center">
         <div className="border-t border-dashed border-[#E8D5C4] pt-3">
-          <p className="text-[10px] text-[#9C7A6A]">Thank you for visiting Abhinandan! 🙏</p>
-          <p className="text-[9px] text-[#C4A882] mt-0.5">Pune, Maharashtra · abhinandan.in</p>
+          <p className="text-[10px] text-[#9C7A6A]">Thank you for visiting Nyahari! 🙏</p>
+          <p className="text-[9px] text-[#C4A882] mt-0.5">Pune, Maharashtra · nyahari.in</p>
         </div>
       </div>
     </div>
@@ -299,7 +299,7 @@ function TokenContent() {
         if (d.settings) {
           setUpiSettings({
             upiId: d.settings.upiId || "",
-            upiMerchantName: d.settings.upiMerchantName || "Abhinandan Tea & Snacks",
+            upiMerchantName: d.settings.upiMerchantName || "Nyahari Tea & Snacks",
           });
         }
       })
@@ -434,15 +434,15 @@ function TokenContent() {
       if (!sessionStorage.getItem(sessionKey)) {
         sessionStorage.setItem(sessionKey, "true");
         const fallbackUpi = upiSettings?.upiId || "abhinandan@upi";
-        const fallbackName = upiSettings?.upiMerchantName || "Abhinandan Tea & Snacks";
-        const upiUrl = `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Abhinandan`)}`;
+        const fallbackName = upiSettings?.upiMerchantName || "Nyahari Tea & Snacks";
+        const upiUrl = `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Nyahari`)}`;
         window.location.href = upiUrl;
       }
     }
   }, [isUpiAwaiting, upiSettings, tokenData, tokenNumber]);
 
   const merchantUpi = upiSettings?.upiId || "abhinandan@upi";
-  const merchantName = upiSettings?.upiMerchantName || "Abhinandan Tea & Snacks";
+  const merchantName = upiSettings?.upiMerchantName || "Nyahari Tea & Snacks";
 
 
   // ── Canvas share ─────────────────────────────────────────────────────────
@@ -455,7 +455,7 @@ function TokenContent() {
   };
 
   const handleShare = async () => {
-    const text = `My order token #${tokenNumber} at Abhinandan Tea & Snacks Centre`;
+    const text = `My order token #${tokenNumber} at Nyahari Tea & Snacks Centre`;
     setSharing(true);
     try {
       const items = tokenData?.order.items || [];
@@ -485,7 +485,7 @@ function TokenContent() {
       // Shop name
       ctx.fillStyle = "rgba(255,255,255,0.9)";
       ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left";
-      ctx.fillText("ABHINANDAN TEA & SNACKS CENTRE", 32, 36);
+      ctx.fillText("NYAHARI TEA & SNACKS CENTRE", 32, 36);
       ctx.fillStyle = "rgba(255,255,255,0.55)";
       ctx.font = "11px sans-serif";
       ctx.fillText(isCounter ? "Pay at Counter" : "Show to Counter Staff", 32, 56);
@@ -568,7 +568,7 @@ function TokenContent() {
       ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
       ctx.setLineDash([]); y += 16;
       ctx.fillStyle = "#9C7A6A"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
-      ctx.fillText("Thank you for visiting! 🙏  |  abhinandan.in", W / 2, y + 16);
+      ctx.fillText("Thank you for visiting! 🙏  |  nyahari.in", W / 2, y + 16);
 
       canvas.toBlob(async (blob) => {
         if (!blob) throw new Error("blob fail");
@@ -660,7 +660,7 @@ function TokenContent() {
 
             {/* Click to pay / Try Again (deep link) */}
             <a
-              href={`upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${encodeURIComponent(merchantName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Abhinandan`)}`}
+              href={`upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${encodeURIComponent(merchantName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Nyahari`)}`}
               className="w-full h-12 rounded-xl font-bold text-sm bg-blue-600 text-white flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 active:scale-[0.98] transition-all"
             >
               📱 Pay via UPI App (₹{tokenData.order.total})
@@ -674,7 +674,7 @@ function TokenContent() {
             {/* Scannable Shop QR fallback */}
             <div className="bg-white border border-blue-100 rounded-xl p-3 shadow-inner">
               <QRCode
-                value={`upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${encodeURIComponent(merchantName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Abhinandan`)}`}
+                value={`upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${encodeURIComponent(merchantName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Nyahari`)}`}
                 size={120}
               />
             </div>
@@ -686,7 +686,7 @@ function TokenContent() {
 
             {/* Retry button */}
             <a
-              href={`upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${encodeURIComponent(merchantName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Abhinandan`)}`}
+              href={`upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${encodeURIComponent(merchantName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Nyahari`)}`}
               className="w-full h-9 rounded-lg border border-blue-200 text-xs font-bold text-blue-700 flex items-center justify-center gap-1.5 hover:bg-blue-50/50 transition-colors"
             >
               🔄 Try Payment Again
