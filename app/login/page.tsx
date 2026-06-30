@@ -84,15 +84,15 @@ export default function LoginPage() {
             </h2>
             <div className="h-0.5 w-12 bg-[var(--amber-brand)] my-6" />
             <p className="text-sm text-[var(--gold-pale)]/60 max-w-xs leading-relaxed">
-              Serving Maharashtra&apos;s finest chai since 2020.<br />Fresh, hot, always on time.
+              Serving Maharashtra&apos;s finest snacks and hot chai.<br />Fresh, delicious, always on time.
             </p>
           </div>
 
           <div className="grid grid-cols-3 gap-3 mt-8">
             {[
-              { v: "500+", l: "cups daily" },
-              { v: "2020", l: "established" },
-              { v: "Pune", l: "Maharashtra" },
+              { v: "Full", l: "Nasta Centre" },
+              { v: "Fresh", l: "Daily Snacks" },
+              { v: "Best", l: "Quality Tea" },
             ].map((s) => (
               <div key={s.l} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(245,215,158,0.12)" }}>
                 <div className="font-bold text-base text-[var(--gold-pale)] leading-none">{s.v}</div>
