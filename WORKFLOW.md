@@ -99,3 +99,17 @@
   - Kept developer email domains (`@abhinandan.in`), routing URLs, and internal keys unchanged to keep the system fully functional and avoid server errors.
 - **Status:** DONE
 
+---
+
+### [2026-06-30 12:00] P5 — Payment Deep Links & iOS Hijack Fix
+- **Prompt:** Direct deep links to Google Pay, PhonePe, and Paytm, bypass WhatsApp hijacking on iOS.
+- **Files edited:**
+  - `app/order/token/page.tsx` — Removed load auto-redirect and rendered direct payment buttons for GPay (`tez://`), PhonePe (`phonepe://`), Paytm (`paytmmp://`), and standard UPI apps.
+- **Commands run:**
+  - `npm run build` — Verified local next.js compilation.
+  - `npx vercel --prod --yes` — Deployed payment updates directly to Vercel production.
+- **Decisions:**
+  - Disabled page-load auto-redirect because the general `upi://` protocol on iOS is automatically captured by WhatsApp.
+- **Status:** DONE
+
+
