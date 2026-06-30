@@ -427,22 +427,19 @@ function TokenContent() {
     heroIconEl: <div className="w-20 h-20 rounded-full bg-blue-100 grid place-items-center"><span className="text-4xl">📱</span></div>,
   } : baseCfg;
 
-  // Auto redirect to UPI app on load (only once per order session)
-  useEffect(() => {
-    if (isUpiAwaiting && tokenData) {
-      const sessionKey = `upi-redirected-${tokenData.id}`;
-      if (!sessionStorage.getItem(sessionKey)) {
-        sessionStorage.setItem(sessionKey, "true");
-        const fallbackUpi = upiSettings?.upiId || "abhinandan@upi";
-        const fallbackName = upiSettings?.upiMerchantName || "Nyahari Tea & Snacks";
-        const upiUrl = `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Nyahari`)}`;
-        window.location.href = upiUrl;
-      }
-    }
-  }, [isUpiAwaiting, upiSettings, tokenData, tokenNumber]);
-
   const merchantUpi = upiSettings?.upiId || "abhinandan@upi";
   const merchantName = upiSettings?.upiMerchantName || "Nyahari Tea & Snacks";
+
+  // App-specific UPI deep links
+  const totalAmount = tokenData?.order.total || 0;
+  const tn = encodeURIComponent(`Token #${tokenNumber} Nyahari`);
+  const pa = encodeURIComponent(merchantUpi);
+  const pn = encodeURIComponent(merchantName);
+
+  const gpayUrl = `tez://upi/pay?pa=${pa}&pn=${pn}&am=${totalAmount}&cu=INR&tn=${tn}`;
+  const phonepeUrl = `phonepe://pay?pa=${pa}&pn=${pn}&am=${totalAmount}&cu=INR&tn=${tn}`;
+  const paytmUrl = `paytmmp://pay?pa=${pa}&pn=${pn}&am=${totalAmount}&cu=INR&tn=${tn}`;
+  const genericUpiUrl = `upi://pay?pa=${pa}&pn=${pn}&am=${totalAmount}&cu=INR&tn=${tn}`;
 
 
   // ── Canvas share ─────────────────────────────────────────────────────────
@@ -659,22 +656,50 @@ function TokenContent() {
             </div>
 
             {/* Click to pay / Try Again (deep link) */}
-            <a
-              href={`upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${encodeURIComponent(merchantName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Nyahari`)}`}
-              className="w-full h-12 rounded-xl font-bold text-sm bg-blue-600 text-white flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 active:scale-[0.98] transition-all"
-            >
-              📱 Pay via UPI App (₹{tokenData.order.total})
-            </a>
+            <div className="w-full flex flex-col gap-2">
+              {/* Google Pay */}
+              <a
+                href={gpayUrl}
+                className="w-full h-11 rounded-xl font-bold text-sm border border-blue-200 hover:border-blue-400 bg-white text-gray-800 flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
+              >
+                <span className="font-sans font-black tracking-tight text-blue-600"><span className="text-red-500">G</span>Pay</span>
+                <span>Pay via Google Pay</span>
+              </a>
+
+              {/* PhonePe */}
+              <a
+                href={phonepeUrl}
+                className="w-full h-11 rounded-xl font-bold text-sm bg-[#5f259f] hover:bg-[#4f1e84] text-white flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
+              >
+                <span>Pay via PhonePe</span>
+              </a>
+
+              {/* Paytm */}
+              <a
+                href={paytmUrl}
+                className="w-full h-11 rounded-xl font-bold text-sm bg-[#002e6e] hover:bg-[#002252] text-white flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
+              >
+                <span className="text-[#00b9f1]">Pay via Paytm</span>
+              </a>
+
+              {/* Other UPI */}
+              <a
+                href={genericUpiUrl}
+                className="w-full h-9 rounded-xl font-bold text-xs border border-dashed border-gray-300 hover:bg-gray-50/50 text-gray-500 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+              >
+                <span>Other UPI Apps</span>
+              </a>
+            </div>
 
             {/* Failed payment warning message */}
             <div className="text-[11px] text-[#A16207] bg-yellow-50/70 border border-yellow-200 rounded-xl p-3 w-full text-left">
-              💡 <b>Failed payment?</b> Try again using the button above, or scan and pay on the shop QR code below.
+              💡 <b>Failed payment?</b> Try using the specific GPay/PhonePe buttons above, or scan the QR code below.
             </div>
 
             {/* Scannable Shop QR fallback */}
             <div className="bg-white border border-blue-100 rounded-xl p-3 shadow-inner">
               <QRCode
-                value={`upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${encodeURIComponent(merchantName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Nyahari`)}`}
+                value={genericUpiUrl}
                 size={120}
               />
             </div>
@@ -686,7 +711,7 @@ function TokenContent() {
 
             {/* Retry button */}
             <a
-              href={`upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${encodeURIComponent(merchantName)}&am=${tokenData.order.total}&cu=INR&tn=${encodeURIComponent(`Token #${tokenNumber} Nyahari`)}`}
+              href={genericUpiUrl}
               className="w-full h-9 rounded-lg border border-blue-200 text-xs font-bold text-blue-700 flex items-center justify-center gap-1.5 hover:bg-blue-50/50 transition-colors"
             >
               🔄 Try Payment Again
