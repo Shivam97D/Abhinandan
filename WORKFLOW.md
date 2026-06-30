@@ -112,4 +112,16 @@
   - Disabled page-load auto-redirect because the general `upi://` protocol on iOS is automatically captured by WhatsApp.
 - **Status:** DONE
 
+---
+
+### [2026-06-30 12:28] P6 — Login Page Nasta Brand Metrics
+- **Prompt:** Update the login page metric cards to describe a full nasta centre instead of tea-only cups counters and establishment year.
+- **Files edited:**
+  - `app/login/page.tsx` — Replaced tea counters and establishment year with "Full Nasta Centre", "Fresh Daily Snacks", and "Best Quality Tea", and adjusted descriptions.
+- **Commands run:**
+  - `npm run build` — Verified local compilation.
+  - `npx vercel --prod --yes` — Deployed login page changes directly to Vercel production.
+- **Status:** DONE
+
+
 
