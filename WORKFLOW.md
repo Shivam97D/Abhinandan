@@ -123,5 +123,25 @@
   - `npx vercel --prod --yes` — Deployed login page changes directly to Vercel production.
 - **Status:** DONE
 
+---
+
+### [2026-06-30 12:50] P7 — Single-Device Login & Developer Admin Account
+- **Prompt:** Limit owner login to a single device at a time, seed a developer admin account with full owner privileges and single-device exemption.
+- **Files edited:**
+  - `prisma/schema.prisma` — Added `sessionToken` field to `User` model.
+  - `app/api/auth/session/route.ts` — Created active session endpoint to store session tokens in DB.
+  - `app/api/users/me/route.ts` — Verified client token cookie against DB token and flagged mismatches.
+  - `app/login/page.tsx` — Wrapped with Suspense, added session registration, cookie writing, and dynamic session mismatch alert banner.
+  - `app/dashboard/page.tsx` — Redirects owner to login if `sessionMismatch` is returned.
+  - `app/section-dashboard/page.tsx` — Redirects section manager if `sessionMismatch` is returned.
+  - `scripts/clean-deliverable.mjs` — Seeded `admin@abhinandan.in` credentials.
+- **Commands run:**
+  - `npx prisma db push` — Synchronized PostgreSQL schema.
+  - `npx prisma generate` — Regenerated TS types.
+  - `npm run build` — Verified compilation.
+  - `npx vercel --prod --yes` — Deployed updates directly to Vercel production.
+- **Status:** DONE
+
+
 
 
