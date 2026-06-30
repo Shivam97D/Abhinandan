@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 import { Plus, Minus, ShoppingCart, X, Menu, Clock, Loader2 } from "lucide-react";
 import { Logo, TeaCupIcon } from "@/components/Logo";
@@ -43,10 +44,11 @@ export default function OrderPage() {
   const { cart, addItem, removeItem, getItems, getTotal, getCount, clearCart } = useCartStore();
   const { setOrder } = useOrderStore();
 
-  const loadMenu = () => {
-    setMenuLoading(true);
+  const loadMenu = (silent: unknown = false) => {
+    const isSilent = silent === true;
+    if (!isSilent) setMenuLoading(true);
     setMenuError(null);
-    fetch("/api/menu")
+    fetch(`/api/menu?t=${Date.now()}`)
       .then((r) => {
         if (!r.ok) throw new Error(`Server error ${r.status}`);
         return r.json();
@@ -56,12 +58,28 @@ export default function OrderPage() {
         setMenuItems(d.items);
       })
       .catch((e: Error) => setMenuError(e.message))
-      .finally(() => setMenuLoading(false));
+      .finally(() => {
+        if (!isSilent) setMenuLoading(false);
+      });
   };
 
   useEffect(() => { setMounted(true); }, []);
   // Load menu from DB
-  useEffect(() => { loadMenu(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    loadMenu();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("menu")
+      .on("broadcast", { event: "menu_update" }, () => {
+        loadMenu(true); // Load silently in the background
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dynamic categories from DB
   const CATS = useMemo(() => {

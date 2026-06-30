@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/utils/supabase/client";
 import { BarChart2, Check, RotateCcw, Loader2 } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
@@ -33,7 +34,7 @@ export default function TeaEntryPage() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      fetch("/api/menu").then(r => r.json()).then(d => {
+      fetch(`/api/menu?t=${Date.now()}`).then(r => r.json()).then(d => {
         const items: TeaItem[] = (d.items || []).filter((m: TeaItem) => m.section === "tea");
         setTeaItems(items);
         // Try restoring saved draft
@@ -58,6 +59,30 @@ export default function TeaEntryPage() {
       }),
       loadHistory(),
     ]).finally(() => setLoading(false));
+  }, []);
+
+  const loadMenuOnly = () => {
+    fetch(`/api/menu?t=${Date.now()}`)
+      .then(r => r.json())
+      .then(d => {
+        const items: TeaItem[] = (d.items || []).filter((m: TeaItem) => m.section === "tea");
+        setTeaItems(items);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("menu")
+      .on("broadcast", { event: "menu_update" }, () => {
+        loadMenuOnly();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Persist draft to localStorage on every qty/shift change

@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
+
+async function triggerMenuBroadcast() {
+  await supabaseAdmin
+    .channel("menu")
+    .send({
+      type: "broadcast",
+      event: "menu_update",
+      payload: { timestamp: new Date().toISOString() },
+    })
+    .catch((err) => console.error("Menu broadcast failed:", err));
+}
+
 
 export async function GET() {
   try {
@@ -38,6 +51,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await triggerMenuBroadcast().catch(() => {});
+
     return NextResponse.json({ item }, { status: 201 });
   } catch (e) {
     console.error("[POST /api/menu]", e);
@@ -66,6 +81,8 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
+    await triggerMenuBroadcast().catch(() => {});
+
     return NextResponse.json({ success: true, item });
   } catch (e) {
     console.error("[PATCH /api/menu]", e);
@@ -83,6 +100,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     await prisma.menuItem.delete({ where: { id } });
+
+    await triggerMenuBroadcast().catch(() => {});
+
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error("[DELETE /api/menu]", e);

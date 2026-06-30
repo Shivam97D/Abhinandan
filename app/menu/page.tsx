@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Plus, Search, Pencil, Trash2, Loader2, X, ImageIcon } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { createClient } from "@/utils/supabase/client";
 
 type Section = "snacks" | "tea";
 
@@ -49,16 +50,32 @@ export default function MenuPage() {
   const [customCat, setCustomCat] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const load = () => {
-    setLoading(true);
-    fetch("/api/menu")
+  const load = (silent = false) => {
+    if (!silent) setLoading(true);
+    fetch(`/api/menu?t=${Date.now()}`)
       .then((r) => r.json())
       .then((d) => setItems(d.items || []))
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!silent) setLoading(false);
+      });
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("menu")
+      .on("broadcast", { event: "menu_update" }, () => {
+        load(true); // Load silently in the background
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const filtered = items.filter((i) => {
     const matchSearch = i.name.toLowerCase().includes(search.toLowerCase()) ||

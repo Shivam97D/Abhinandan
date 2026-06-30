@@ -200,11 +200,27 @@ export default function CounterPage() {
     return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    fetch("/api/menu")
+  const loadMenu = () => {
+    fetch(`/api/menu?t=${Date.now()}`)
       .then(r => r.json())
       .then(d => setDbMenuItems((d.items || []).filter((m: DBMenuItem) => m.section === "snacks" && m.available)))
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadMenu();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("menu")
+      .on("broadcast", { event: "menu_update" }, () => {
+        loadMenu();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
