@@ -75,3 +75,27 @@
   - Discovered Suresh's user account in Supabase was set to `snacks_staff` instead of `owner`. Corrected his role programmatically.
 - **New requirements found:** Seeding rules added to system guidelines.
 - **Status:** DONE
+
+---
+
+### [2026-06-30 10:35] P4 — Nyahari Rebranding
+- **Prompt:** Rename the snacks centre to Nyahari (न्याहारी), extract the Marathi name, and use it across the visible UI elements and logos while preserving the URL and internal identifiers.
+- **Files edited:**
+  - `components/Logo.tsx` — Replaced "अभिनंदन" with "न्याहारी".
+  - `components/Sidebar.tsx` — Replaced fallback text with "Nyahari".
+  - `app/login/page.tsx` — Replaced logo text with "न्याहारी".
+  - `app/layout.tsx` — Updated site titles to "न्याहारी" / "Nyahari".
+  - `prisma/seed.ts` — Updated default settings row to seed "Nyahari Tea & Snacks Centre".
+  - `app/settings/page.tsx` — Rebranded placeholders and defaults.
+  - `app/orders/page.tsx` — Rebranded headers and footers.
+  - `app/counter/page.tsx` — Rebranded bill headers and print title.
+  - `app/reports/page.tsx` — Rebranded sharing reports.
+  - `app/dashboard/page.tsx` — Rebranded sharing summaries.
+  - `app/order/token/page.tsx` — Rebranded canvas tickets, text headers, and note.
+- **Commands run:**
+  - `npx tsx prisma/seed.ts` — Seeding database to populate Nyahari defaults.
+  - `npx vercel --prod --yes` — Deployed rebranding directly to Vercel production.
+- **Decisions:**
+  - Kept developer email domains (`@abhinandan.in`), routing URLs, and internal keys unchanged to keep the system fully functional and avoid server errors.
+- **Status:** DONE
+
