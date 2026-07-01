@@ -417,7 +417,7 @@ export default function OrderPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-4xl">
-                      {item.section === "tea" ? "🍵" : "🍽️"}
+                      🍽️
                     </div>
                   )}
 

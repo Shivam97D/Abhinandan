@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { prisma } from '@/lib/prisma'
 
@@ -8,12 +8,25 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
+// Passwords come from the environment so no credential lives in source control.
+// The literal fallbacks only exist to keep an un-provisioned dev box working —
+// set OWNER_PASSWORD / MANAGER_PASSWORD in production and re-run this endpoint.
 const STAFF = [
-  { username: 'Owner', email: 'owner@abhinandan.in', password: 'Owner@99', role: 'owner' },
-  { username: 'Manager', email: 'manager@abhinandan.in', password: 'Manager@88', role: 'section_manager' },
+  { username: 'Owner', email: 'owner@abhinandan.in', password: process.env.OWNER_PASSWORD || 'Owner@99', role: 'owner' },
+  { username: 'Manager', email: 'manager@abhinandan.in', password: process.env.MANAGER_PASSWORD || 'Manager@88', role: 'section_manager' },
+  { username: 'Server', email: 'server@abhinandan.in', password: process.env.SERVER_PASSWORD || 'Server@88', role: 'snacks_staff' },
+  // Developer admin: exempt from single-device login. Provisioned here so it
+  // always exists (not only via the one-off cleanup script).
+  { username: 'Admin', email: 'admin@abhinandan.in', password: process.env.ADMIN_PASSWORD || 'Admin@908', role: 'owner' },
 ]
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  // This endpoint can create accounts and RESET passwords, so it is gated behind
+  // a server-only shared secret. Without ADMIN_SETUP_SECRET configured it is off.
+  const secret = process.env.ADMIN_SETUP_SECRET
+  if (!secret || req.headers.get('x-setup-secret') !== secret) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
   try {
     const { data: existing } = await supabaseAdmin.auth.admin.listUsers()
     const results = []

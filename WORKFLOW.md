@@ -145,3 +145,122 @@
 
 
 
+
+---
+
+### [2026-07-01 00:00] P8 — API Security Hardening (default-deny auth, price integrity)
+- **Prompt:** Make the app secure with standard security implementations; only the customer `/order` flow stays login-less; secure everything else.
+- **Files edited:**
+  - `middleware.ts` — Reworked into default-deny API authorization. Middleware now runs on `/api/*` (matcher no longer excludes `api`). Unauthenticated requests are rejected with 401 JSON unless the exact path/method is on a public allowlist (menu GET, settings GET, orders POST, orders/session GET, single-token GET, payment status/create-order/razorpay/webhook, sms, auth/logout, users/me, secret-gated setup-auth). Owner-only endpoints (analytics, staff, menu writes, menu/upload, settings PUT, orders GET) return 403 for non-owners. section_manager limited to token endpoints. Page protection switched to network-validated `getUser()`. Matcher excludes only the public customer pages `/order` and `/token/[id]` (precise lookahead so the staff `/orders` page stays protected).
+  - `app/api/admin/setup-auth/route.ts` — Gated behind `ADMIN_SETUP_SECRET` header (off when unset); moved Owner/Manager passwords to `OWNER_PASSWORD`/`MANAGER_PASSWORD` env vars (literal fallbacks for un-provisioned dev only).
+  - `app/api/auth/logout/route.ts` — Redirect now uses the request origin instead of the wrong `NEXTAUTH_URL`/localhost fallback.
+  - `app/api/orders/route.ts` — Prices resolved server-side from DB (no client-supplied prices); `source` forced to `customer`; quantity validation; rejects unknown/unavailable items.
+  - `app/api/orders/counter/route.ts` — Server-side price resolution + quantity validation (defense in depth).
+  - `app/api/payments/create-order/route.ts` — Server-side price resolution; removed client `amount` trust.
+- **Commands run:**
+  - `npx tsc --noEmit` — Typecheck passed.
+  - `npx next lint` (changed files) — No warnings or errors.
+- **Decisions:** Centralized authZ in middleware (default-deny) rather than per-route guards, so no route can be left open by omission. Kept the public order flow fast by short-circuiting allowlisted endpoints before any auth lookup.
+- **New requirements found:** Production must set `ADMIN_SETUP_SECRET`, `OWNER_PASSWORD`, `MANAGER_PASSWORD`; committed default credentials should be rotated by re-running setup-auth.
+- **Status:** DONE
+
+---
+
+### [2026-07-01 00:30] P9 — High/Medium/Low fixes: IST time, atomic tokens, real data, full tea removal
+- **Prompt:** Fix the high logical bugs (token race, timezone, daily reset) for Pune/real-time, plus the medium issues; remove all mock/false data; remove the Tea part entirely; brand = Nyahari (Abhinandan only in URL/QR). Run on localhost.
+- **Files created:**
+  - `lib/businessDay.ts` — IST (UTC+5:30) business-day helpers; day rolls at `tokenResetTime`.
+  - `lib/tokens.ts` — `createWithToken()` allocates token numbers atomically with retry on the unique [date,tokenNumber] race.
+  - `hooks/useSessionGuard.ts` — real-time single-device enforcement (per-user realtime channel + 30s poll).
+- **Files edited:**
+  - `app/api/orders/route.ts`, `app/api/orders/counter/route.ts`, `app/api/payments/webhook/route.ts` — IST business date + atomic token allocation.
+  - `app/api/tokens/route.ts` — IST date; returns `nextTokenNumber` for the POS.
+  - `app/api/tokens/by-number/[tokenNumber]/route.ts` — IST date lookup.
+  - `app/api/analytics/route.ts` — rewritten on IST business day (today/week/month, IST hours); tea aggregations removed; `Cache-Control: no-store` for live data.
+  - `app/api/auth/session/route.ts` — broadcasts `revoked` to other devices for instant single-device logout.
+  - `app/api/admin/setup-auth/route.ts` — provisions the developer admin (admin@abhinandan.in) too.
+  - `app/counter/page.tsx` — shows the real next token from DB (removed hardcoded #47 store); no fake-token fallback on failure; session guard.
+  - `app/dashboard/page.tsx`, `app/reports/page.tsx` — single revenue chart; tea donut/chart/cards removed; session guard.
+  - `app/menu/page.tsx`, `app/settings/page.tsx`, `app/staff/page.tsx`, `app/orders/page.tsx`, `app/login/page.tsx`, `app/order/page.tsx`, `app/order/token/page.tsx`, `app/layout.tsx`, `app/error.tsx`, `app/not-found.tsx` — removed Tea UI/strings; brand → "Nyahari Snacks Centre"; session guard on owner pages.
+  - `app/api/settings/route.ts` — dropped `teaPricePerCup`.
+  - `lib/store.ts` — removed mock token store.
+  - `middleware.ts` — dropped tea pages + `/api/sms` from allowlists.
+  - `prisma/seed.ts` — shop name → "Nyahari Snacks Centre".
+- **Files deleted:** `app/tea-entry/`, `app/tea-monitor/`, `app/section-dashboard/`, `app/api/tea-entry/`, `app/api/sms/`.
+- **Commands run:** `npx tsc --noEmit` (clean) · `next lint` (only pre-existing warnings) · `npm run build` (success) · `npm run dev` (running on :3002) · verified 401/403 on protected APIs, 200 on public APIs, and server-side price enforcement (₹1 tamper → charged real ₹20).
+- **Decisions:** Business day rolls at the configured `tokenResetTime` (default 07:00 IST) so token reset + "today" analytics match the owner's day with no cron needed. Schema enums for tea (Section.tea, tea_staff, TeaQuickEntry) left in place to avoid a risky live migration — all tea usage removed at app level.
+- **New requirements found:** Razorpay is still credential-blocked (mock); the live UPI flow is deep-link + manual confirm. Needs owner decision: wire real Razorpay (needs keys) or remove the mock endpoints.
+- **Status:** DONE
+
+---
+
+### [2026-07-01 01:00] P10 — Handover prep: drop Razorpay, wipe transactional data, brand fix
+- **Prompt:** Client doesn't want Razorpay's 2% fee — keep manual UPI confirm. Delivering tomorrow: clean all data except UPI/settings/menu; recreate roles (owner/manager/server/admin); single owner dashboard. Then re-audit and ask next steps.
+- **Files deleted:** `app/api/payments/` (razorpay, create-order, status, webhook — all mock/unused; client uses manual UPI confirm).
+- **Files edited:**
+  - `middleware.ts` — removed payment endpoints from the public allowlist.
+  - `app/settings/page.tsx` — secrets notice no longer mentions Razorpay/SMS.
+- **DB operations (live, via one-off scripts):**
+  - Wiped transactional data: tokens (2), orderItems (2), orders (2), payments (0), teaEntries (0). KEPT: 6 menu items (with images), shop settings, users.
+  - Updated ShopSettings.shopName → "Nyahari Snacks Centre"; upiMerchantName placeholder "Paytm" → "Nyahari Snacks". upiId credential untouched.
+- **Audit findings:** Accounts already exist — owner@, manager@, snacks@, admin@, plus a leftover **tea@ (tea_staff)** to remove. Auth user_metadata.name is unset on all.
+- **Commands run:** `npx tsc --noEmit` (clean) · `next lint` (no errors) · verified server on :3002 (menu 6 items, protected routes locked).
+- **Decisions:** Razorpay fully removed per client (manual UPI confirm via payment-sound + staff token confirm is the only payment path). Users left intact pending the owner's credential decision before recreating the role accounts.
+- **Status:** PARTIAL — awaiting credential decision to finalize accounts.
+
+---
+
+### [2026-07-01 01:20] P11 — Handover accounts provisioned
+- **Prompt:** Create the 4 single-outlet roles (owner/manager/server/admin) with strong-but-daily passwords; remove the Tea login; show credentials once.
+- **DB/auth operations (live):**
+  - Deleted obsolete auth logins: tea@, snacks@.
+  - Provisioned 4 accounts (Supabase auth + Prisma User, linked by supabaseId): owner (owner→Dashboard), manager (section_manager→Serving), server (snacks_staff→Counter POS), admin (owner, single-device-exempt→Dashboard/monitor). Names + roles set in user_metadata.
+  - Reset Prisma User table to exactly these 4.
+  - Verified all 4 sign in successfully with correct roles.
+- **Files edited:** `app/api/admin/setup-auth/route.ts` — added Server (snacks_staff) to the bootstrap set (SERVER_PASSWORD env). `app/api/users/me/route.ts` — `export const dynamic = "force-dynamic"`.
+- **Commands run:** `npx tsc --noEmit` (clean) · `npm run build` (success).
+- **Decisions:** Passwords generated at runtime (pattern Role@PIN) and delivered to the developer out-of-band — NOT committed to source.
+- **Status:** DONE
+
+---
+
+### [2026-07-01 02:00] P12 — Staff self-signup + pending approval, role hardening, full smoke test
+- **Prompt:** Add a signup page (any user → pending → owner assigns role). Test on localhost; smoke-test all roles (customer, server, manager, owner, admin). Check Bluetooth thermal printer support. Report remaining + progress.
+- **Files created:**
+  - `app/signup/page.tsx` — public staff self-signup form.
+  - `app/pending/page.tsx` — "awaiting approval" screen for unassigned accounts.
+  - `app/api/auth/signup/route.ts` — public; creates a Supabase auth user with role "pending" and no DB row (surfaces in owner's Staff → Pending).
+- **Files edited:**
+  - `middleware.ts` — added VALID_ROLES; pending/unknown roles now get NO access (API 403, pages → /pending). Closed the previous default-to-owner hole. Added /api/auth/signup to public allowlist. snacks_staff(login)→/counter, owner→/dashboard.
+  - `app/login/page.tsx` — pending role → /pending; added "New staff? Create an account" link.
+  - `app/api/users/me/route.ts` — fallback role "owner" → "pending".
+- **Ops:** Killed two stale next-server instances (ports 3000/3001) left from prior sessions. Restarted dev cleanly on :3002 after a `.next` cache corruption (caused by running `build` while dev ran).
+- **Testing:**
+  - HTTP: /,/login,/signup,/pending,/order all 200/307; /api/menu 200; /api/analytics 401; setup-auth 403; signup success + validation (short pw 400, duplicate "taken").
+  - End-to-end logic smoke test (real route helpers + DB), ALL PASSED: customer counter+UPI orders (sequential atomic tokens), server payment confirm, manager prepare→ready→served, by-number lookup, owner analytics (IST business day), menu CRUD, signup→pending→owner-assign. Test data cleaned up; DB final state orders:0 users:4 menu:6.
+- **Printer:** Receipt printing IS built (counter `printBill`) — thermal HTML at 80mm (with 58mm fallback) via browser print dialog + window.print(); popup-blocked → blob fallback. NOT a direct Web-Bluetooth/ESC-POS integration.
+- **Status:** DONE
+
+---
+
+### [2026-07-01 02:30] P13 — Production deploy to Vercel
+- **Prompt:** Go for the production deploy.
+- **Pre-flight:** Confirmed Vercel project `shivam-gds-projects/abhinandan`. Verified all 5 required Production env vars present (DATABASE_URL, DIRECT_URL, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_URL). ADMIN_SETUP_SECRET intentionally unset → setup-auth disabled in prod.
+- **Commands run:** `npx vercel env ls production` (verify) · `npx vercel --prod --yes` (deploy; build OK in 54s).
+- **Result:** Production READY. Deployment id dpl_3xs8WiAT16ngBVL6e7n7eeBckWuY. URL https://abhinandan-1lmmw0xea-shivam-gds-projects.vercel.app · alias https://abhinandan-theta.vercel.app.
+- **Verification (prod):** / →307 /login; /login,/signup,/order →200; /api/menu →200 (real DB + Supabase images); /api/analytics unauth →401; setup-auth →403. Same Supabase DB → 4 role accounts + menu live.
+- **Note:** Deploy used the local working tree (uncommitted). Recommend committing/pushing so the git-linked Vercel project stays in sync for future deploys.
+- **Status:** DONE
+
+---
+
+### [2026-07-01 02:50] P14 — Fix owner false auto-logout (single-device guard)
+- **Prompt:** Owner on mobile gets logged out when navigating between screens. Was it testing dashboard + order page on the same device, or a bug?
+- **Root cause:** Not the user's testing. The single-device check in `/api/users/me` force-logged-out whenever the `owner_session_token` COOKIE was absent (treated `!cookie` as "logged in elsewhere"). Client-set cookies are unreliable on mobile / can lose a login-time race, so a single legitimate device was being kicked out on navigation.
+- **Files edited:**
+  - `app/api/users/me/route.ts` — removed the server-side cookie mismatch + `cookies` import; now just returns the user (incl. DB sessionToken). Never force-logs-out.
+  - `app/login/page.tsx` — store the session token in `localStorage` (reliable, synchronous) instead of a client cookie.
+  - `hooks/useSessionGuard.ts` — compare localStorage token vs DB token; log out ONLY on a real conflict (token present AND superseded). Missing token = no logout. Broadcast 'revoked' re-verifies. Admin / token-less accounts auto-exempt.
+- **Behavior now:** single device never false-logs-out; a genuine second-device login still kicks the first device (its stored token no longer matches the rotated DB token).
+- **Commands run:** `npx tsc --noEmit` (clean). Local dev (:3002) hot-reloaded the fix.
+- **Status:** DONE (code) — production redeploy pending user confirmation.

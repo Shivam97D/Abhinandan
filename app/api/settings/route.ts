@@ -36,7 +36,6 @@ export async function PUT(req: NextRequest) {
       ...(body.website             !== undefined && { website:             String(body.website) }),
       ...(body.upiId               !== undefined && { upiId:               String(body.upiId) }),
       ...(body.upiMerchantName     !== undefined && { upiMerchantName:     String(body.upiMerchantName) }),
-      ...(body.teaPricePerCup      !== undefined && { teaPricePerCup:      parseFloat(String(body.teaPricePerCup)) || 12 }),
       ...(body.morningStart        !== undefined && { morningStart:        String(body.morningStart) }),
       ...(body.morningEnd          !== undefined && { morningEnd:          String(body.morningEnd) }),
       ...(body.eveningStart        !== undefined && { eveningStart:        String(body.eveningStart) }),

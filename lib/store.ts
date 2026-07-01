@@ -51,20 +51,6 @@ export const useCartStore = create<CartStore>()(
   )
 );
 
-type TokenStore = {
-  nextToken: number;
-  issueToken: () => number;
-};
-
-export const useTokenStore = create<TokenStore>()((set, get) => ({
-  nextToken: 47,
-  issueToken: () => {
-    const token = get().nextToken;
-    set((s) => ({ nextToken: s.nextToken + 1 }));
-    return token;
-  },
-}));
-
 type OrderItem = { id: string; name: string; price: number; qty: number };
 
 type OrderStore = {

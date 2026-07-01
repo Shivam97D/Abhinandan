@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const supabase = createClient()
   await supabase.auth.signOut()
-  return NextResponse.redirect(new URL('/login', process.env.NEXTAUTH_URL || 'http://localhost:3000'))
+  // Redirect relative to the actual request origin (works on any deploy domain).
+  return NextResponse.redirect(new URL('/login', req.url))
 }

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -23,7 +24,7 @@ export async function GET() {
         user: {
           id: authUser.id,
           name: authUser.user_metadata?.name ?? authUser.email?.split("@")[0] ?? "Staff",
-          role: authUser.user_metadata?.role ?? "owner",
+          role: authUser.user_metadata?.role ?? "pending",
           section: null,
           phone: null,
           supabaseId: authUser.id,
@@ -31,15 +32,10 @@ export async function GET() {
       });
     }
 
-    // Verify single-device owner session
-    if (user.role === "owner" && authUser.email !== "admin@abhinandan.in") {
-      const activeCookieToken = cookies().get("owner_session_token")?.value;
-      if (!activeCookieToken || activeCookieToken !== user.sessionToken) {
-        console.warn(`[Session Mismatch] User: ${authUser.email}. Active: ${user.sessionToken}, Cookie: ${activeCookieToken}`);
-        return NextResponse.json({ user: null, sessionMismatch: true });
-      }
-    }
-
+    // Single-device enforcement is done on the client: it compares the token it
+    // stored at login (localStorage) against `user.sessionToken` below. The server
+    // just reports the current DB token — it never force-logs-out here, so a
+    // missing/transient cookie can no longer cause a false logout.
     return NextResponse.json({ user });
   } catch (e) {
     console.error("[GET /api/users/me]", e);

@@ -29,7 +29,7 @@ export default function GlobalError({
         Something went wrong
       </h1>
       <p className="text-sm text-[var(--muted-warm)] mb-1 max-w-xs">
-        An unexpected error occurred. The chai spilled — we&apos;re sorry!
+        An unexpected error occurred — we&apos;re sorry! Please try again.
       </p>
       {error.digest && (
         <p className="text-[11px] font-mono text-[var(--muted-warm)]/50 mb-6">

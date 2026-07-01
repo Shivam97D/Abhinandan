@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   IndianRupee, ShoppingBag, Clock, Ticket, Bell, ArrowUp, ArrowDown,
-  Lightbulb, TrendingUp, Share2, AlertTriangle, Coffee, UtensilsCrossed, X, Loader2, Settings, Check,
+  Lightbulb, TrendingUp, Share2, AlertTriangle, UtensilsCrossed, X, Loader2, Settings, Check,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -13,6 +13,7 @@ import {
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { createClient } from "@/utils/supabase/client";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 
 const MAROON  = "#4A1414";
 
@@ -86,7 +87,6 @@ type AnalyticsData = {
   totalRevenue: number;
   orderCount: number;
   avgOrder: number;
-  teaRevenue: number;
   snacksRevenue: number;
   paymentSplit: Record<string, number>;
   topItems: { id: string; name: string; qty: number; revenue: number }[];
@@ -98,8 +98,6 @@ type AnalyticsData = {
   liveQueue: { id: string; tokenNumber: number; status: string; paymentMethod: string | null; total: number; items: string }[];
   recentOrders: { id: string; tokenNumber: string; source: string; items: string; amount: number; paymentMethod: string; status: string; tokenStatus: string | null; time: string }[];
   insights: string[];
-  teaCupCount: number;
-  teaStatsToday: { morning: { cups: number; amount: number }; evening: { cups: number; amount: number } };
   yesterdayRevenue: number | null;
   revenueVsYesterday: { amount: number; positive: boolean } | null;
 };
@@ -107,11 +105,10 @@ type AnalyticsData = {
 type UserProfile = { id: string; name: string; role: string; section: string | null };
 
 const EMPTY: AnalyticsData = {
-  totalRevenue: 0, orderCount: 0, avgOrder: 0, teaRevenue: 0, snacksRevenue: 0,
+  totalRevenue: 0, orderCount: 0, avgOrder: 0, snacksRevenue: 0,
   paymentSplit: {}, topItems: [], hourlyData: [], chartData: [], peakHour: "—",
   peakHourCount: 0, pendingTokenCount: 0, liveQueue: [], recentOrders: [],
   insights: ["No data yet", "No data yet", "No data yet"],
-  teaCupCount: 0, teaStatsToday: { morning: { cups: 0, amount: 0 }, evening: { cups: 0, amount: 0 } },
   yesterdayRevenue: null, revenueVsYesterday: null,
 };
 
@@ -173,19 +170,13 @@ export default function Dashboard() {
     return () => clearInterval(t);
   }, []);
 
+  // Real-time single-device enforcement (logout if signed in elsewhere).
+  useSessionGuard();
+
   useEffect(() => {
     fetch("/api/users/me")
       .then(r => r.json())
-      .then(d => {
-        if (d.sessionMismatch) {
-          alert("Logged out: Your account has been logged in from another device.");
-          fetch("/api/auth/logout", { method: "POST" }).finally(() => {
-            window.location.href = "/login?reason=session_expired";
-          });
-          return;
-        }
-        if (d.user) setUser(d.user);
-      })
+      .then(d => { if (d.user) setUser(d.user); })
       .catch(() => {});
   }, []);
 
@@ -238,11 +229,6 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [period, loadData]);
 
-  const pieData = [
-    { name: "Tea",    value: data.teaRevenue,    color: MAROON },
-    { name: "Snacks", value: data.snacksRevenue, color: AMBER },
-  ];
-
   const paymentData = Object.entries(data.paymentSplit).map(([name, value], i) => ({
     name, value, color: i % 2 === 0 ? MAROON : AMBER,
   }));
@@ -258,7 +244,7 @@ export default function Dashboard() {
 
   const shareReport = () => {
     const dateStr = now ? now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "—";
-    const text = `*Nyahari ${period} Summary*\n📅 ${dateStr}\n\n💰 Revenue: ₹${data.totalRevenue.toLocaleString("en-IN")}\n   ☕ Tea: ₹${data.teaRevenue.toLocaleString("en-IN")}\n   🍟 Snacks: ₹${data.snacksRevenue.toLocaleString("en-IN")}\n\n📦 Orders: ${data.orderCount} (Avg ₹${data.avgOrder})\n🏆 Top Item: ${data.topItems[0]?.name ?? "—"} (${data.topItems[0]?.qty ?? 0} units)\n⏰ Peak Hour: ${data.peakHour}\n\n_Sent from Nyahari App_`;
+    const text = `*Nyahari ${period} Summary*\n📅 ${dateStr}\n\n💰 Revenue: ₹${data.totalRevenue.toLocaleString("en-IN")}\n📦 Orders: ${data.orderCount} (Avg ₹${data.avgOrder})\n🏆 Top Item: ${data.topItems[0]?.name ?? "—"} (${data.topItems[0]?.qty ?? 0} units)\n⏰ Peak Hour: ${data.peakHour}\n\n_Sent from Nyahari App_`;
     if (navigator.share) navigator.share({ text });
     else navigator.clipboard.writeText(text);
   };
@@ -417,10 +403,6 @@ export default function Dashboard() {
             <div className="relative z-10">
               <p className="text-xs uppercase tracking-wider text-[var(--gold-pale)]/60 mb-1">{period}&apos;s Revenue</p>
               <p className="text-5xl font-bold font-display" style={{ color: "#F5D79E" }}>₹{data.totalRevenue.toLocaleString("en-IN")}</p>
-              <div className="flex gap-3 mt-3 flex-wrap">
-                <span className="px-3 py-1 rounded-full text-sm bg-white/10">☕ Tea ₹{data.teaRevenue.toLocaleString("en-IN")}</span>
-                <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ background: "rgba(232,146,10,0.25)", color: "#F5D79E" }}>🍟 Snacks ₹{data.snacksRevenue.toLocaleString("en-IN")}</span>
-              </div>
               <div className="flex justify-between items-center mt-3 flex-wrap gap-2">
                 {data.revenueVsYesterday ? (
                   <span className={`text-sm font-semibold flex items-center gap-1 ${data.revenueVsYesterday.positive ? "text-green-400" : "text-red-400"}`}>
@@ -457,9 +439,9 @@ export default function Dashboard() {
               sub={<span className="text-xs text-[var(--muted-warm)]">Snacks counter</span>} />
           </div>
 
-          {/* Revenue chart + pie */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-            <div className="lg:col-span-3 card-warm p-5">
+          {/* Revenue chart */}
+          <div className="grid grid-cols-1 gap-4">
+            <div className="card-warm p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-bold text-[var(--maroon-deep)]">Revenue Overview</h3>
                 <div className="flex gap-1 bg-[var(--gold-bg)] rounded-lg p-1">
@@ -488,10 +470,6 @@ export default function Dashboard() {
                   ) : (
                     <AreaChart data={data.chartData}>
                       <defs>
-                        <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={MAROON} stopOpacity={0.4} />
-                          <stop offset="100%" stopColor={MAROON} stopOpacity={0} />
-                        </linearGradient>
                         <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor={AMBER} stopOpacity={0.5} />
                           <stop offset="100%" stopColor={AMBER} stopOpacity={0} />
@@ -501,38 +479,10 @@ export default function Dashboard() {
                       <XAxis dataKey={xKey} stroke="var(--muted-warm)" fontSize={12} />
                       <YAxis stroke="var(--muted-warm)" fontSize={12} />
                       <Tooltip contentStyle={{ background: "white", border: `1px solid ${MAROON}`, borderRadius: 8 }} formatter={(v: unknown) => `₹${v}`} />
-                      <Area type="monotone" dataKey="tea" stroke={MAROON} fill="url(#g1)" strokeWidth={2} name="Tea" />
-                      <Area type="monotone" dataKey="snacks" stroke={AMBER} fill="url(#g2)" strokeWidth={2} name="Snacks" />
+                      <Area type="monotone" dataKey="revenue" stroke={AMBER} fill="url(#g2)" strokeWidth={2} name="Revenue" />
                     </AreaChart>
                   )}
                 </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="lg:col-span-2 card-warm p-5">
-              <h3 className="text-base font-bold text-[var(--maroon-deep)] mb-2">Tea vs Snacks</h3>
-              <div className="relative h-52">
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie data={pieData} dataKey="value" innerRadius={55} outerRadius={80} paddingAngle={2}>
-                      {pieData.map((d) => <Cell key={d.name} fill={d.color} />)}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 grid place-items-center pointer-events-none">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold font-display text-[var(--maroon-deep)]">₹{data.totalRevenue.toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-[var(--muted-warm)]">{period}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                {data.totalRevenue > 0 && (
-                  <>
-                    <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: MAROON }} /><span className="text-[var(--maroon)] font-semibold">Tea {Math.round((data.teaRevenue / data.totalRevenue) * 100)}%</span></div>
-                    <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: AMBER }} /><span className="text-[var(--maroon)] font-semibold">Snacks {Math.round((data.snacksRevenue / data.totalRevenue) * 100)}%</span></div>
-                  </>
-                )}
               </div>
             </div>
           </div>
@@ -634,23 +584,8 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Section cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-[var(--gold-bg)] border border-[var(--border-warm)] rounded-xl p-4 border-l-4" style={{ borderLeftColor: MAROON }}>
-              <div className="flex items-center gap-2 mb-1">
-                <Coffee size={18} className="text-[var(--maroon)]" />
-                <h3 className="font-bold text-[var(--maroon-deep)]">Tea Counter</h3>
-              </div>
-              <p className="text-sm text-[var(--muted-warm)]">
-                {period}: ₹{data.teaRevenue.toLocaleString("en-IN")} · {data.teaCupCount} cups
-              </p>
-              <p className="text-xs text-[var(--muted-warm)] mt-0.5">
-                Morning: {data.teaStatsToday.morning.cups} cups · Evening: {data.teaStatsToday.evening.cups} cups
-              </p>
-              <Link href="/tea-entry" className="mt-3 inline-block text-xs text-[var(--amber-brand)] font-semibold hover:underline">
-                View Tea Dashboard →
-              </Link>
-            </div>
+          {/* Section card */}
+          <div className="grid grid-cols-1 gap-4">
             <div className="bg-[var(--gold-bg)] border border-[var(--border-warm)] rounded-xl p-4 border-l-4" style={{ borderLeftColor: AMBER }}>
               <div className="flex items-center gap-2 mb-1">
                 <UtensilsCrossed size={18} className="text-[var(--amber-brand)]" />

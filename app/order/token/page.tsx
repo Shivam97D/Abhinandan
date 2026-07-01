@@ -190,7 +190,7 @@ function BillCard({
           <p className="text-[10px] uppercase tracking-widest font-bold text-white/70 leading-none mb-0.5">
             {isCounter ? "Pay at Counter" : "Show to Counter Staff"}
           </p>
-          <p className="text-white text-xs font-semibold">Nyahari Tea & Snacks Centre</p>
+          <p className="text-white text-xs font-semibold">Nyahari Snacks Centre</p>
         </div>
         <div className="text-right">
           {/* Live ticking clock — proves bill is live, not a screenshot */}
@@ -299,7 +299,7 @@ function TokenContent() {
         if (d.settings) {
           setUpiSettings({
             upiId: d.settings.upiId || "",
-            upiMerchantName: d.settings.upiMerchantName || "Nyahari Tea & Snacks",
+            upiMerchantName: d.settings.upiMerchantName || "Nyahari Snacks",
           });
         }
       })
@@ -428,7 +428,7 @@ function TokenContent() {
   } : baseCfg;
 
   const merchantUpi = upiSettings?.upiId || "abhinandan@upi";
-  const merchantName = upiSettings?.upiMerchantName || "Nyahari Tea & Snacks";
+  const merchantName = upiSettings?.upiMerchantName || "Nyahari Snacks";
 
   // App-specific UPI deep links
   const totalAmount = tokenData?.order.total || 0;
@@ -452,7 +452,7 @@ function TokenContent() {
   };
 
   const handleShare = async () => {
-    const text = `My order token #${tokenNumber} at Nyahari Tea & Snacks Centre`;
+    const text = `My order token #${tokenNumber} at Nyahari Snacks Centre`;
     setSharing(true);
     try {
       const items = tokenData?.order.items || [];
@@ -482,7 +482,7 @@ function TokenContent() {
       // Shop name
       ctx.fillStyle = "rgba(255,255,255,0.9)";
       ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left";
-      ctx.fillText("NYAHARI TEA & SNACKS CENTRE", 32, 36);
+      ctx.fillText("NYAHARI SNACKS CENTRE", 32, 36);
       ctx.fillStyle = "rgba(255,255,255,0.55)";
       ctx.font = "11px sans-serif";
       ctx.fillText(isCounter ? "Pay at Counter" : "Show to Counter Staff", 32, 56);

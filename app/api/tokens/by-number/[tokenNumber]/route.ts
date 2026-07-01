@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { businessDate } from "@/lib/businessDay";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { tokenNumber: string } }
 ) {
   try {
-    const today = new Date().toISOString().split("T")[0];
+    const settings = await prisma.shopSettings.findUnique({
+      where: { id: "default" },
+      select: { tokenResetTime: true },
+    });
+    const today = businessDate(settings?.tokenResetTime ?? "07:00");
     const num = parseInt(params.tokenNumber, 10);
 
     if (isNaN(num)) {

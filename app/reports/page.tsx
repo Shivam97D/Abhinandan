@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 
 const MAROON = "#4A1414";
 const AMBER  = "#E8920A";
@@ -32,6 +33,7 @@ const EMPTY: AnalyticsData = {
 };
 
 export default function ReportsPage() {
+  useSessionGuard();
   const [period, setPeriod] = useState<Period>("Week");
   const [data, setData] = useState<AnalyticsData>(EMPTY);
   const [loading, setLoading] = useState(true);
@@ -134,10 +136,6 @@ export default function ReportsPage() {
                     ) : (
                       <AreaChart data={data.chartData}>
                         <defs>
-                          <linearGradient id="rg1" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={MAROON} stopOpacity={0.4} />
-                            <stop offset="100%" stopColor={MAROON} stopOpacity={0} />
-                          </linearGradient>
                           <linearGradient id="rg2" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor={AMBER} stopOpacity={0.4} />
                             <stop offset="100%" stopColor={AMBER} stopOpacity={0} />
@@ -147,8 +145,7 @@ export default function ReportsPage() {
                         <XAxis dataKey={xKey} stroke="var(--muted-warm)" fontSize={11} />
                         <YAxis stroke="var(--muted-warm)" fontSize={11} />
                         <Tooltip formatter={(v: unknown) => `₹${v}`} contentStyle={{ border: `1px solid ${MAROON}`, borderRadius: 8 }} />
-                        <Area type="monotone" dataKey="tea"    stroke={MAROON} fill="url(#rg1)" strokeWidth={2} name="Tea" />
-                        <Area type="monotone" dataKey="snacks" stroke={AMBER}  fill="url(#rg2)" strokeWidth={2} name="Snacks" />
+                        <Area type="monotone" dataKey="revenue" stroke={AMBER} fill="url(#rg2)" strokeWidth={2} name="Revenue" />
                       </AreaChart>
                     )}
                   </ResponsiveContainer>

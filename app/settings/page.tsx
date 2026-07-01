@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Save, AlertCircle, Loader2, CheckCircle2, Store, CreditCard, Clock, Bell, Hash, Info } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Settings = {
@@ -16,7 +17,6 @@ type Settings = {
   website: string;
   upiId: string;
   upiMerchantName: string;
-  teaPricePerCup: number;
   morningStart: string;
   morningEnd: string;
   eveningStart: string;
@@ -28,7 +28,7 @@ type Settings = {
 };
 
 const DEFAULTS: Settings = {
-  shopName: "Nyahari Tea & Snacks Centre",
+  shopName: "Nyahari Snacks Centre",
   location: "Pune, Maharashtra",
   phone: "",
   email: "",
@@ -36,8 +36,7 @@ const DEFAULTS: Settings = {
   fssaiNumber: "",
   website: "",
   upiId: "",
-  upiMerchantName: "Nyahari Tea & Snacks",
-  teaPricePerCup: 12,
+  upiMerchantName: "Nyahari Snacks",
   morningStart: "07:00",
   morningEnd: "14:00",
   eveningStart: "14:00",
@@ -114,6 +113,7 @@ function Toggle({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
+  useSessionGuard();
   const [s, setS] = useState<Settings>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -203,7 +203,7 @@ export default function SettingsPage() {
             <div className="flex gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
               <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-800">
-                API credentials (Supabase, Razorpay, SMS secret) stay in{" "}
+                API credentials (Supabase keys) stay in{" "}
                 <code className="bg-amber-100 px-1 rounded">.env.local</code> — never enter them here.
                 Everything else is saved to the database.
               </p>
@@ -271,12 +271,7 @@ export default function SettingsPage() {
                 note="Shown inside Google Pay / PhonePe when customer scans">
                 <input className={INPUT} value={s.upiMerchantName}
                   onChange={(e) => set("upiMerchantName", e.target.value)}
-                  placeholder="Nyahari Tea & Snacks" />
-              </Field>
-              <Field label="Tea Price per Cup (₹)"
-                note="SMS auto-detection: UPI credit ÷ this value = number of cups">
-                <input className={INPUT} value={s.teaPricePerCup} type="number" min={1}
-                  onChange={(e) => set("teaPricePerCup", parseFloat(e.target.value) || 12)} />
+                  placeholder="Nyahari Snacks" />
               </Field>
 
               {/* Manual UPI confirm toggle */}
@@ -352,22 +347,6 @@ export default function SettingsPage() {
                 value={s.dailyReportWhatsapp}
                 onChange={(v) => set("dailyReportWhatsapp", v)}
               />
-            </Section>
-
-            {/* ── SMS Auto-Detection (read-only info) ───────────── */}
-            <Section icon={<Info size={15} />} title="SMS Auto-Detection (read-only)">
-              <Field label="SMS Forwarder Endpoint"
-                note="Configure this URL in your Android SMS Forwarder or Tasker app">
-                <input className={INPUT}
-                  value={typeof window !== "undefined" ? `${window.location.origin}/api/sms` : "/api/sms"}
-                  readOnly
-                  onClick={(e) => { (e.target as HTMLInputElement).select(); }}
-                />
-              </Field>
-              <Field label="SMS Forwarder Secret"
-                note="Set SMS_FORWARDER_SECRET in .env.local — paste the same value in the Android app">
-                <input className={INPUT} value="••••••••••••••••" type="password" disabled />
-              </Field>
             </Section>
 
             {/* Bottom save button repeat */}

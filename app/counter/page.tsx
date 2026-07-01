@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Trash2, Check, UtensilsCrossed, Clock, QrCode, Loader2, History, Minus, X, Bell, Settings, Printer } from "lucide-react";
 import { Logo } from "@/components/Logo";
-import { useTokenStore } from "@/lib/store";
 import { createClient } from "@/utils/supabase/client";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 import QRCode from "react-qr-code";
 
 function playSynthSound(type: string) {
@@ -171,7 +171,7 @@ export default function CounterPage() {
 
   // UPI settings fetched from DB settings
   const [upiId, setUpiId] = useState("");
-  const [upiName, setUpiName] = useState("Nyahari Tea & Snacks");
+  const [upiName, setUpiName] = useState("Nyahari Snacks");
   useEffect(() => {
     fetch("/api/settings")
       .then(r => r.json())
@@ -192,7 +192,9 @@ export default function CounterPage() {
   const [queueLoading, setQueueLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
   const [historyDetail, setHistoryDetail] = useState<QueueEntry | null>(null);
-  const { nextToken, issueToken } = useTokenStore();
+  // Real next token number for today, sourced from the DB (never a local guess).
+  const [nextToken, setNextToken] = useState<number | null>(null);
+  useSessionGuard();
 
   useEffect(() => {
     setNow(new Date());
@@ -232,6 +234,7 @@ export default function CounterPage() {
         }) => ({ id: t.id, tokenNumber: t.tokenNumber, status: t.status as TokenStatus, order: t.order, expanded: true }));
         setQueue(tokens.filter(t => t.status !== "served").reverse());
         setHistoryList(tokens.filter(t => t.status === "served").reverse());
+        if (typeof data.nextTokenNumber === "number") setNextToken(data.nextTokenNumber);
       })
       .catch(() => {})
       .finally(() => setQueueLoading(false));
@@ -271,6 +274,7 @@ export default function CounterPage() {
           timestamp: new Date(),
         };
         setNotifications(prev => [newNotif, ...prev]);
+        setNextToken(prev => Math.max(prev ?? 0, (payload.tokenNumber || 0) + 1));
 
         fetch(`/api/tokens/${payload.tokenId}`)
           .then(r => r.json())
@@ -378,7 +382,7 @@ export default function CounterPage() {
 <body>
   <div class="center">
     <div class="shop-name">न्याहारी</div>
-    <div class="shop-sub">Tea & Snacks Centre</div>
+    <div class="shop-sub">Snacks Centre</div>
     <div class="shop-sub">Pune, Maharashtra</div>
   </div>
   <hr class="divider-solid" />
@@ -489,30 +493,30 @@ export default function CounterPage() {
         }),
       });
       const data = await res.json();
-      const token = data.order?.tokenNumber ?? issueToken();
+      if (!res.ok || !data.order?.tokenNumber) {
+        throw new Error(data.error || "Order failed");
+      }
+      const token = data.order.tokenNumber;
       setIssuedToken(token);
+      setNextToken(token + 1);
       setOrderPlaced(true);
       // Auto-print if toggle is ON
       if (printReceipt) {
-        printBill({ ...printSnapshot, tokenNumber: token, orderId: data.order?.id });
+        printBill({ ...printSnapshot, tokenNumber: token, orderId: data.order.id });
       }
-    } catch {
-      const token = issueToken();
-      setIssuedToken(token);
-      setOrderPlaced(true);
-      if (printReceipt) {
-        printBill({ ...printSnapshot, tokenNumber: token });
-      }
+      setTimeout(() => {
+        setOrderPlaced(false);
+        setCart({});
+        setNote("");
+        setIssuedToken(null);
+        setPay("UPI");
+      }, 3000);
+    } catch (e) {
+      // No fake token fallback — surface the real failure so staff can retry.
+      alert(`Could not place order: ${e instanceof Error ? e.message : "please try again"}`);
     } finally {
       setOrderLoading(false);
     }
-    setTimeout(() => {
-      setOrderPlaced(false);
-      setCart({});
-      setNote("");
-      setIssuedToken(null);
-      setPay("UPI");
-    }, 3000);
   };
 
   const revertToQueue = async (entry: QueueEntry) => {
@@ -795,7 +799,7 @@ export default function CounterPage() {
               ) : (
                 <span className="flex items-center gap-2">
                   {printReceipt && <Printer size={14} />}
-                  Issue Token #{String(nextToken).padStart(3, "0")}{total > 0 ? ` · ₹${total}` : ""}
+                  Issue Token{nextToken != null ? ` #${String(nextToken).padStart(3, "0")}` : ""}{total > 0 ? ` · ₹${total}` : ""}
                 </span>
               )}
             </button>

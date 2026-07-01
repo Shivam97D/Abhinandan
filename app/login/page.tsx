@@ -11,7 +11,6 @@ const ROLE_ROUTES: Record<string, string> = {
   owner:           "/dashboard",
   section_manager: "/serving",
   snacks_staff:    "/counter",
-  tea_staff:       "/tea-entry",
 };
 
 function LoginForm() {
@@ -50,7 +49,9 @@ function LoginForm() {
         if (sRes.ok) {
           const { sessionToken } = await sRes.json();
           if (sessionToken) {
-            document.cookie = `owner_session_token=${sessionToken}; path=/; max-age=31536000; SameSite=Lax;`;
+            // Stored in localStorage (reliable on mobile, no cookie race). The
+            // session guard compares this against the DB token to enforce one device.
+            localStorage.setItem("owner_session_token", sessionToken);
           }
         }
       } catch (err) {
@@ -58,7 +59,8 @@ function LoginForm() {
       }
     }
 
-    router.push(ROLE_ROUTES[role] || "/dashboard");
+    // Unknown / pending role → no workspace yet; send to the approval screen.
+    router.push(ROLE_ROUTES[role] ?? "/pending");
   };
 
   return (
@@ -92,17 +94,17 @@ function LoginForm() {
               >
                 न्याहारी
               </span>
-              <span className="text-xs text-[var(--gold-pale)]/50 tracking-wider uppercase">Tea & Snacks Centre</span>
+              <span className="text-xs text-[var(--gold-pale)]/50 tracking-wider uppercase">Snacks Centre</span>
             </div>
           </div>
 
           <div className="flex-1 flex flex-col justify-center mt-10 md:mt-0">
             <h2 className="text-3xl md:text-4xl font-bold leading-snug text-[var(--gold-pale)] max-w-xs">
-              Where every cup<br />tells a story
+              Every plate<br />tells a story
             </h2>
             <div className="h-0.5 w-12 bg-[var(--amber-brand)] my-6" />
             <p className="text-sm text-[var(--gold-pale)]/60 max-w-xs leading-relaxed">
-              Serving Maharashtra&apos;s finest snacks and hot chai.<br />Fresh, delicious, always on time.
+              Serving Maharashtra&apos;s finest snacks.<br />Fresh, delicious, always on time.
             </p>
           </div>
 
@@ -110,7 +112,7 @@ function LoginForm() {
             {[
               { v: "Full", l: "Nasta Centre" },
               { v: "Fresh", l: "Daily Snacks" },
-              { v: "Best", l: "Quality Tea" },
+              { v: "Best", l: "Local Quality" },
             ].map((s) => (
               <div key={s.l} className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(245,215,158,0.12)" }}>
                 <div className="font-bold text-base text-[var(--gold-pale)] leading-none">{s.v}</div>
@@ -197,8 +199,15 @@ function LoginForm() {
           </p>
 
           <Link
+            href="/signup"
+            className="block mt-4 text-center text-sm font-semibold text-[var(--brown)] hover:text-[var(--maroon-deep)] transition-colors"
+          >
+            New staff? Create an account →
+          </Link>
+
+          <Link
             href="/order"
-            className="block mt-4 text-center text-sm text-[var(--brown)] hover:text-[var(--maroon-deep)] transition-colors"
+            className="block mt-3 text-center text-sm text-[var(--brown)] hover:text-[var(--maroon-deep)] transition-colors"
           >
             Customer? Tap here to order ↗
           </Link>

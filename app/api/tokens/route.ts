@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
+import { businessDate } from "@/lib/businessDay";
 
 export const dynamic = "force-dynamic";
 
@@ -8,11 +9,15 @@ const VALID_STATUSES = ["awaiting_payment", "pending", "preparing", "ready", "se
 
 export async function GET() {
   try {
-    const today = new Date().toISOString().split("T")[0];
+    const settings = await prisma.shopSettings.findUnique({
+      where: { id: "default" },
+      select: { tokenResetTime: true },
+    });
+    const today = businessDate(settings?.tokenResetTime ?? "07:00");
     const tokens = await prisma.token.findMany({
       where: { date: today },
       orderBy: { tokenNumber: "asc" },
-      take: 100,
+      take: 200,
       include: {
         order: {
           include: {
@@ -21,7 +26,9 @@ export async function GET() {
         },
       },
     });
-    return NextResponse.json({ tokens });
+    // Next number to be issued today — lets the POS show the real upcoming token.
+    const maxToken = tokens.reduce((m, t) => Math.max(m, t.tokenNumber), 0);
+    return NextResponse.json({ tokens, nextTokenNumber: maxToken + 1, businessDate: today });
   } catch (e) {
     console.error("[GET /api/tokens]", e);
     return NextResponse.json({ error: "Failed to fetch tokens" }, { status: 500 });

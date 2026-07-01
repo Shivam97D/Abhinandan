@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Search, Loader2, X, Receipt } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 
 type RawOrder = {
   id: string;
@@ -188,6 +189,7 @@ function BillModal({ order, onClose }: { order: DisplayOrder; onClose: () => voi
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function OrdersPage() {
+  useSessionGuard();
   const [rawOrders, setRawOrders] = useState<DisplayOrder[]>([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState("");

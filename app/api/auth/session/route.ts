@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,12 @@ export async function POST() {
         where: { supabaseId: authUser.id },
         data: { sessionToken },
       });
+
+      // Notify any other open device for this owner to log out immediately.
+      await supabaseAdmin
+        .channel(`session-${authUser.id}`)
+        .send({ type: "broadcast", event: "revoked", payload: { sessionToken } })
+        .catch(() => {});
     }
 
     return NextResponse.json({ success: true, sessionToken });

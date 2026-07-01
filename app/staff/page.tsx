@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { UserPlus, Loader2, Trash2, X, Phone, Mail, Shield, ChevronDown } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 
 type StaffMember = {
   id: string;
@@ -27,23 +28,23 @@ type PendingUser = {
 
 const ROLE_DISPLAY: Record<string, string> = {
   owner: "Owner", section_manager: "Section Manager",
-  snacks_staff: "Snacks Staff", tea_staff: "Tea Staff",
+  snacks_staff: "Snacks Staff",
 };
 const ROLE_BADGE: Record<string, string> = {
   owner: "bg-[var(--maroon-deep)]/10 text-[var(--maroon-deep)]",
   section_manager: "bg-blue-50 text-blue-700",
   snacks_staff: "bg-amber-50 text-amber-700",
-  tea_staff: "bg-green-50 text-green-700",
 };
 const ROLE_COLORS: Record<string, string> = {
   owner: "#4A1414", section_manager: "#2563EB",
-  snacks_staff: "#E8920A", tea_staff: "#1A6B3A",
+  snacks_staff: "#E8920A",
 };
 
 type FormState = { name: string; username: string; password: string; role: string; section: string; phone: string };
 const BLANK: FormState = { name: "", username: "", password: "", role: "snacks_staff", section: "", phone: "" };
 
 export default function StaffPage() {
+  useSessionGuard();
   const [staff, setStaff]               = useState<StaffMember[]>([]);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading]           = useState(true);
@@ -124,8 +125,8 @@ export default function StaffPage() {
     finally { setSaving(false); }
   };
 
-  const teaStaff    = staff.filter(s => s.section === "tea");
   const snacksStaff = staff.filter(s => s.section === "snacks" || s.role === "snacks_staff");
+  const managers    = staff.filter(s => s.role === "section_manager");
 
   return (
     <div className="flex min-h-screen bg-[var(--gold-bg)]">
@@ -148,8 +149,8 @@ export default function StaffPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: "Total Staff",    val: staff.length },
-              { label: "Tea Section",    val: teaStaff.length },
-              { label: "Snacks Section", val: snacksStaff.length },
+              { label: "Managers",       val: managers.length },
+              { label: "Snacks Staff",   val: snacksStaff.length },
               { label: "Pending",        val: pendingUsers.length },
             ].map((s) => (
               <div key={s.label} className="card-warm p-4 text-center">
@@ -313,12 +314,6 @@ export default function StaffPage() {
                   <span className="text-[var(--muted-warm)] text-xs w-3.5 shrink-0">📅</span>
                   <span className="text-[var(--ink)]">Member since {new Date(profileOf.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
                 </div>
-                {profileOf._count && profileOf._count.teaEntries > 0 && (
-                  <div className="flex items-center gap-3 p-3 bg-[var(--gold-bg)] rounded-lg">
-                    <span className="text-[var(--muted-warm)] text-xs w-3.5 shrink-0">☕</span>
-                    <span className="text-[var(--ink)]">{profileOf._count.teaEntries} tea entries recorded</span>
-                  </div>
-                )}
               </div>
             </div>
             <div className="px-5 pb-5 flex gap-3">
@@ -375,7 +370,6 @@ export default function StaffPage() {
                       className="w-full h-11 px-3 bg-[var(--gold-bg)] border border-[var(--border-warm)] rounded-lg text-[var(--ink)] focus:outline-none">
                       <option value="">— None —</option>
                       <option value="snacks">Snacks</option>
-                      <option value="tea">Tea</option>
                     </select>
                   </div>
                 </div>
@@ -456,7 +450,6 @@ export default function StaffPage() {
                       className="w-full h-11 px-3 bg-[var(--gold-bg)] border border-[var(--border-warm)] rounded-lg text-[var(--ink)] focus:outline-none">
                       <option value="">— None —</option>
                       <option value="snacks">Snacks</option>
-                      <option value="tea">Tea</option>
                     </select>
                   </div>
                 </div>

@@ -5,9 +5,10 @@ import Image from "next/image";
 import { Plus, Search, Pencil, Trash2, Loader2, X, ImageIcon } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { useSessionGuard } from "@/hooks/useSessionGuard";
 import { createClient } from "@/utils/supabase/client";
 
-type Section = "snacks" | "tea";
+type Section = "snacks";
 
 type MenuItem = {
   id: string;
@@ -19,7 +20,7 @@ type MenuItem = {
   imageUrl: string | null;
 };
 
-const SECTION_EMOJI: Record<Section, string> = { snacks: "🍟", tea: "☕" };
+const SECTION_EMOJI: Record<string, string> = { snacks: "🍟" };
 
 type FormState = {
   id?: string;
@@ -38,6 +39,7 @@ const BLANK: FormState = {
 };
 
 export default function MenuPage() {
+  useSessionGuard();
   const [items, setItems]       = useState<MenuItem[]>([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
@@ -247,7 +249,7 @@ export default function MenuPage() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-3xl">
-                        {SECTION_EMOJI[item.section]}
+                        {SECTION_EMOJI[item.section] ?? "🍽️"}
                       </div>
                     )}
 
